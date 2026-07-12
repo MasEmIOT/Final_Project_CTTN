@@ -1,0 +1,30 @@
+<?xml version='1.0' encoding='utf-8'?>
+<EdgeProfilerReport app="EdgeProfiler" version="1.0">
+  <Session>
+    <Start>2026-06-13 17:53:59</Start>
+    <End>2026-06-13 18:05:57</End>
+    <Duration>0:11:58</Duration>
+    <Samples>0</Samples>
+  </Session>
+  <testsuite name="HIL_Suite" tests="1" failures="1">
+    <testcase name="HW Fault: Inject I2C Lockup (SHT30)" time="0">
+      <failure message="no telemetry">no telemetry</failure>
+    </testcase>
+  </testsuite>
+  <LoRaStats>
+    <AvgRSSI>None</AvgRSSI>
+    <AvgSNR>None</AvgSNR>
+    <PDR>None</PDR>
+  </LoRaStats>
+  <SensorStats>
+    <Temperature min="None" max="None" avg="None" />
+    <Humidity min="None" max="None" avg="None" />
+    <Light min="None" max="None" avg="None" />
+    <Pressure min="None" max="None" avg="None" />
+  </SensorStats>
+  <Memory>
+    <HeapStart>None</HeapStart>
+    <HeapEnd>None</HeapEnd>
+    <HeapDelta>None</HeapDelta>
+  </Memory>
+</EdgeProfilerReport>

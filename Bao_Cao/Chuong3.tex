@@ -1,0 +1,607 @@
+
+\section*{CHƯƠNG 3. PHÂN TÍCH VÀ THIẾT KẾ HỆ THỐNG}
+\addcontentsline{toc}{section}{\numberline {} CHƯƠNG 3. PHÂN TÍCH VÀ THIẾT KẾ TỔNG THỂ HỆ THỐNG}
+\setcounter{section}{3}
+\setcounter{subsection}{0}
+\setcounter{figure}{0}
+\setcounter{table}{0}
+Chương này sẽ tiến hành phân tách bài toán từ trên xuống dưới. Bắt đầu từ việc phân tích sâu sắc các yêu cầu chức năng và phi chức năng để vạch ra biên giới hoạt động của hệ thống, tiếp đó là biện luận lựa chọn các giải pháp công nghệ phần cứng tối ưu nhất. Cuối cùng, hệ thống sẽ được kiến trúc hóa thông qua các sơ đồ khối, kiến trúc phần mềm đa nhiệm trên FreeRTOS và các lưu đồ thuật toán Điện toán biên. 
+\subsection{Phân tích yêu cầu hệ thống}
+Để đáp ứng mục tiêu nghiên cứu và giải quyết triệt để bài toán thực tiễn tại các trang trại, thiết bị Node phải thỏa mãn các yêu cầu khắt khe được lượng hóa bằng các tham số cụ thể sau:
+\subsubsection{Yêu cầu chức năng}
+\begin{itemize}
+    \item Thu thập và giám sát vi khí hậu: Node phải quét và lấy mẫu liên tục dữ liệu từ tổ hợp cảm biến với sai số đo lường dưới 5\%. Cụ thể, hệ thống phải theo dõi sát sao biểu đồ nhiệt - ẩm và nhận diện ngay lập tức khi môi trường chạm các ngưỡng nguy hiểm: nhiệt độ vượt 35°C (gây stress nhiệt) , độ ẩm trên 75\% , và nồng độ khí độc Amoniac (NH3) vượt ngưỡng 25 ppm.
+    \item Điện toán biên (Edge Computing): Tích hợp Máy trạng thái hữu hạn (FSM) tại vi điều khiển để tự động đối chiếu dữ liệu thô với ma trận ngưỡng an toàn. Khi phát hiện các tham số vượt ngưỡng (ví dụ: nhiệt độ > 35°C), thuật toán biên phải tự động kích hoạt ngõ ra GPIO để đóng Rơ-le điều khiển hệ thống làm mát cục bộ mà không cần chờ lệnh từ Gateway hay Cloud.
+    \item Yêu cầu cốt lõi ở đây không chỉ là tốc độ phản hồi
+mà còn là tính tự chủ của vòng lặp điều khiển -- luồng ra
+quyết định phải được khép kín hoàn toàn bên trong Node, hoạt động độc
+lập với trạng thái của kênh truyền vô tuyến bên ngoài. Điều đó có nghĩa
+là ngay cả khi Gateway mất điện, đường truyền LoRa bị gián đoạn hay
+kết nối Internet hoàn toàn đứt gãy, FSM vẫn tiếp tục chu kỳ giám sát
+và sẵn sàng kích hoạt cơ cấu chấp hành để bảo vệ vật nuôi trong thời
+gian thực. Tính chất này phân biệt rõ ràng kiến trúc đề xuất so với các
+giải pháp thương mại phụ thuộc Cloud. Về mặt triển khai phần mềm, FSM
+được hiện thực hóa như một tác vụ độc lập chạy trên lõi riêng biệt
+(Core Pinning) trong FreeRTOS, đảm bảo không bị gián đoạn bởi các luồng
+xử lý truyền thông hay mã hóa đang diễn ra song song. Ràng buộc thời
+gian tất định dưới 50 ms được bảo đảm nhờ cơ chế ưu tiên tác vụ
+(Preemptive Scheduling) của hệ điều hành thời gian thực.
+
+    \begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\linewidth]{Thuc_Hanh/Image/Edge Node System Context.pdf}
+    \caption{Edge Node System Context}
+    \label{Hình 3.1}
+    \end{figure}
+    Hình \ref{Hình 3.1} mô tả sơ đồ hệ thống hóa các luồng tương tác giữa thực thể môi trường vật lý (Microclimate, HVAC) và các khối chức năng nội tại của Node biên. Khối FSM Edge Inference đóng vai trò là "Bộ não trung tâm", tách biệt hoàn toàn luồng điều khiển cơ điện (hướng xuống HVAC) khỏi luồng truyền tải dữ liệu (hướng sang mã hóa và LoRa). Cấu trúc rẽ nhánh từ khối LoRa đến khối Storage minh họa hành vi tự nhận thức lỗi của hệ thống: việc ghi log ngoại tuyến không phải là tác vụ chạy liên tục, mà chỉ được đánh thức khi kênh truyền vô tuyến gặp sự cố gián đoạn.
+    
+    \item Truyền thông vô tuyến LoRa: Đóng gói dữ liệu Payload (định mức 32-bytes)  và phát sóng định kỳ. Cấu hình phần cứng phải chốt ở tần số 433 MHz, Spreading Factor (SF) = 7, Bandwidth (BW) = 125 kHz và Coding Rate = 4/5 để cân bằng giữa băng thông và tầm xa.
+    
+    \item Lưu trữ ngoại tuyến (Offline Storage): Xây dựng cơ chế phát hiện rớt mạng cục bộ. Khi không nhận được gói tin phản hồi (ACK) từ Gateway, Node phải tự động đẩy dữ liệu log vào vùng nhớ tĩnh (Flash/PSRAM) và đồng bộ lại ngay khi sóng vô tuyến được khôi phục.
+    \item Bảo mật và tính toàn vẹn dữ liệu: Mã hóa toàn bộ khối dữ liệu tải trọng bằng thuật toán đối xứng AES-128. Đồng thời, tích hợp IC thời gian thực (RTC DS3231) để đính kèm nhãn thời gian (Timestamp) vào từng gói tin , thiết lập cửa sổ thời gian chặn Replay Attack với độ lệch $\Delta{t}$ < 5s.
+\end{itemize}
+\subsubsection{Yêu cầu phi chức năng}
+\begin{itemize}
+    \item Độ trễ xử lý Điện toán biên (Edge Latency): Thời gian đáp ứng của luồng điều khiển (tính từ thời điểm cảm biến xuất tín hiệu báo vượt ngưỡng đến khi chân GPIO đóng mạch Rơ-le) bắt buộc phải nhỏ hơn 50 mili-giây.
+    \item Hiệu suất năng lượng và Tuổi thọ pin (Power Profiling): Vận hành trên nguồn pin Li-ion 18650 (dung lượng 3200mAh). Hệ thống phải quản lý dòng tiêu thụ thông qua chế độ Deep Sleep, duy trì dòng rò ở trạng thái chờ dưới 20µA. Với chu kỳ lấy mẫu 5 phút/lần, Node phải có khả năng hoạt động liên tục hơn 3 tháng mà không cần sạc lại.
+    \item Chất lượng đường truyền (Link Quality): Phủ sóng vô tuyến ổn định trong bán kính 500m đến 1000m ở điều kiện không vật cản (Line-of-Sight). Trong môi trường chuồng trại có tường bê tông che khuất (Non-Line-of-Sight), Tỷ lệ mất gói tin (Packet Loss Rate - PLR) phải được duy trì dưới 5\% ở mốc khoảng cách 200m.
+    \item An toàn chức năng (Functional Safety): Hệ thống phải hoạt động ổn định 24/7. Yêu cầu bắt buộc phải cấu hình Hardware Watchdog Timer để tự động reset vi điều khiển nếu xảy ra hiện tượng treo bus I2C hoặc rò rỉ vùng nhớ heap (Memory Leak).
+\end{itemize}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\linewidth]{Thuc_Hanh/Image/SystemRequire.pdf}
+    \caption{Edge IoT System Requirements and Actors}
+    \label{Hình 3.2}
+\end{figure}
+Hình \ref{Hình 3.2} mô tả sơ đồ yêu cầu hệ thống và các tác nhân (Edge IoT System Requirements \& Actors) của một hệ thống IoT biên (Edge IoT) dùng để giám sát vi khí hậu và điều khiển thông gió trong môi trường chăn nuôi hoặc nhà kính.
+
+Hệ thống bắt đầu từ các yếu tố môi trường (Microclimate Environment) như nồng độ NH3, nhiệt độ và độ ẩm. Các thông số này được thu thập bởi khối Data Acquisition, sử dụng các giao tiếp như I2C hoặc ADC để đọc dữ liệu từ cảm biến. Để tiết kiệm năng lượng, khối này được hỗ trợ bởi cơ chế Pulsed Heating nhằm đánh thức cảm biến khi cần đo đạc.
+
+Dữ liệu thô sau khi thu thập sẽ được chuyển đến khối Edge Computing FSM (Finite State Machine) để xử lý cục bộ tại thiết bị biên. Khối này thực hiện các thuật toán ra quyết định với yêu cầu độ trễ thấp (nhỏ hơn 50 ms), đồng thời đưa ra các hành động điều khiển đối với hệ thống thông gió (Ventilation System) nhằm duy trì điều kiện môi trường phù hợp.
+
+Trước khi truyền đi, dữ liệu được mã hóa bằng AES-128 Encryption để đảm bảo tính bảo mật. Sau đó dữ liệu mã hóa được gửi thông qua mô-đun LoRa TX/RX bằng giao tiếp SPI hoặc UART. Dữ liệu được truyền qua liên kết vô tuyến Sub-GHz RF đến Gateway hoặc Cloud, nơi thực hiện chức năng lưu trữ, giám sát và phân tích dữ liệu.
+
+Để tăng độ tin cậy của hệ thống, khi kết nối mạng hoặc truyền thông LoRa gặp sự cố, cơ chế Offline SPIFFS Storage sẽ được kích hoạt để lưu trữ dữ liệu tạm thời trên bộ nhớ cục bộ, bảo đảm không bị mất dữ liệu và hỗ trợ vận hành theo chế độ dự phòng (Fail-safe).
+
+\begin{table}[H]
+\centering
+\caption{Định lượng hóa các Yêu cầu Phi chức năng (Non-Functional Specifications)}
+\label{Bảng 3.1}
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{p{4.0cm} p{6.5cm} p{4cm}}
+\hline
+\textbf{Nhóm Yêu cầu} & \textbf{Tham số Định lượng Thiết kế} & \textbf{Kiểm chứng } \\ \hline
+\textbf{ Thời gian } & Thời gian đáp ứng từ Sensor $\rightarrow$ Relay $< 50\text{ ms}$. & Đo bằng xung Trigger. \\ 
+\textbf{Năng lượng} & Dòng tĩnh Deep Sleep $< 20\mu\text{A}$. Dòng đỉnh Active $< 150\text{ mA}$. & Đo bằng đồng hồ vạn năng. \\ 
+\textbf{An toàn và chịu lỗi} & Tự động phục hồi khi I2C treo $< 2\text{ giây}$. Watchdog Timeout = $2\text{s}$. & Ép chập mạch I2C cứng (Short circuit) để test Reset. \\ 
+\textbf{Cơ khí} & Vỏ khí động học, màng lọc PTFE. Chuẩn IP65, mạch FR4 phủ keo. & Test ngâm sương ẩm $85\%$ trong $48\text{ giờ}$. \\ \hline
+\end{tabular}
+\end{table}
+Bảng dữ liệu phi chức năng như Bảng \ref{Bảng 3.1} là tiêu chí cho quá trình lựa chọn linh kiện vật lý. Để đạt được dòng rò $< 20\mu\text{A}$, các kỹ sư phải rà soát từng con điện trở và dòng Quiescent của IC nguồn. Để đạt độ trễ $< 50\text{ ms}$, CPU phải duy trì xung nhịp cao ở thời điểm Active. Cột phương pháp kiểm chứng đảm bảo mọi thiết kế trên giấy đều sẽ được đối chứng bằng phần cứng thực tế.
+\subsubsection{Yêu cầu kỹ thuật và thiết kế phần cứng}
+\begin{itemize}
+    \item Mạch nguyên lý và khối xử lý cốt lõi: Sử dụng vi điều khiển có năng lực xử lý đa nhân làm khối trung tâm, kết hợp với module truyền thông vô tuyến tầm xa dải tần thấp (Sub-GHz) thông qua giao thức truyền thông nối tiếp tiêu chuẩn. Khối quản lý năng lượng yêu cầu tích hợp mạch sạc và linh kiện ổn áp tuyến tính (LDO) có dòng tĩnh (Quiescent current) cực thấp. 
+    \item Thiết kế mạch in (Custom PCB): Thiết kế bo mạch in tiêu chuẩn công nghiệp 2 lớp. Quá trình quy hoạch đường mạch (Layout) phải tuân thủ nghiêm ngặt các quy tắc chống nhiễu điện từ (EMI). Cụ thể, cần thiết lập các vùng cách ly (Keep-out zone) không phủ đồng tại khu vực ăng-ten vô tuyến để tránh suy hao phát xạ, đồng thời phân tách vật lý rõ ràng giữa vùng tín hiệu số (Digital) tốc độ cao và đường tín hiệu tương tự (Analog) nhạy cảm để triệt tiêu nhiễu chéo. Bo mạch sau khi hoàn thiện gia công và hàn linh kiện dán (SMD) phải được phủ lớp bảo vệ chuyên dụng để chống ô xi hóa trong môi trường độ ẩm cao và nhiều khí ăn mòn.
+\end{itemize}
+
+\subsection{Thiết kế kiến trúc và lựa chọn giải pháp công nghệ}
+Từ việc phân tích cặn kẽ các ràng buộc hệ thống, quá trình ra quyết định để lựa chọn linh kiện và công nghệ đòi hỏi sự cân nhắc giữa hiệu năng xử lý, khả năng quản lý năng lượng và tính khả thi trong thiết kế.
+\subsubsection{Kiến trúc tổng thể hệ thống}
+Sơ đồ kiến trúc tổng thể của toàn bộ hệ thống được thể hiện trong Hình \ref{Hình 3.3}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\linewidth]{Thuc_Hanh/Image/KienTrucTongThe.pdf}
+    \caption{Kiến trúc tổng thể của hệ thống}
+    \label{Hình 3.3}
+\end{figure}
+Kiến trúc tổng thể của hệ thống giám sát vi khí hậu được thiết kế theo mô hình phân lớp (Layered Architecture) tiêu chuẩn của IoT công nghiệp. Hình ảnh minh họa một hệ sinh thái khép kín từ khâu thu thập dữ liệu vật lý đến khâu tương tác với người dùng cuối, được chia thành 5 phân lớp (Layer) chuyên biệt. Việc phân mảnh cấu trúc này không chỉ giúp cô lập lỗi (Fault Isolation) mà còn tối ưu hóa tính linh hoạt và khả năng mở rộng của toàn hệ thống.
+\subsubsection{Thiết kế sơ đồ khối tổng thể của Node}
+Sau khi đã phân tích lựa chọn cho từng khối chức năng riêng lẻ, các khối này được tích hợp lại thành một kiến trúc phần cứng hoàn chỉnh của thiết bị Node. Sơ đồ khối tổng thể trong Hình \ref{fig:ch3_block} thể hiện rõ ràng năm phân hệ chính và cách chúng trao đổi tín hiệu với khối xử lý trung tâm ESP32-S3.
+
+% ===================================================================
+% PlantUML cho Hình 3.8 - render và lưu thành: Thuc_Hanh/Image/Ch3_BlockDiagram.png
+% @startuml
+% skinparam componentStyle rectangle
+% skinparam backgroundColor white
+% rectangle "KHOI NGUON\nUSB-C -> TP4056 (sac)\n-> AO3401A -> AP2112K (LDO 3V3)\nPin Li-ion 18650" as PWR
+% rectangle "ESP32-S3-WROOM-1\n(Loi kep LX7 240MHz)\n- FreeRTOS\n- FSM Edge\n- AES-128/ASCON" as MCU
+% rectangle "CAM BIEN VI KHI HAU\nSHT31 / BMP180 / BH1750\n(I2C)" as ENV
+% rectangle "CAM BIEN KHI\nMQ-135 (A0) / CH4 (ADC)\nCO2 (UART)" as GAS
+% rectangle "RTC DS3231\n(I2C + SQW)" as RTC
+% rectangle "LoRa SX1278\n(SPI, 433MHz)" as LORA
+% rectangle "KHOI CHAP HANH\nAct1/Act2/Act3 -> Ro-le\n(Quat/Phun suong/Suoi)" as ACT
+% rectangle "RGB LED + Nut BOOT/RESET/USER" as UI
+% PWR --> MCU : 3V3
+% ENV --> MCU : I2C
+% GAS --> MCU : ADC/UART
+% RTC --> MCU : I2C/SQW
+% MCU --> LORA : SPI
+% MCU --> ACT : GPIO
+% MCU --> UI
+% LORA --> MCU : DIO0 (ngat RX/TX)
+% @enduml
+% ===================================================================
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\linewidth]{Thuc_Hanh/Image/BlockDiagramNode.pdf}
+    \caption{Sơ đồ khối tổng thể phần cứng của thiết bị Node}
+    \label{fig:ch3_block}
+\end{figure}
+
+Trung tâm của sơ đồ là vi điều khiển ESP32-S3, đóng vai trò bộ não điều phối mọi luồng tín hiệu. Khối nguồn cung cấp điện áp $3{,}3\,\text{V}$ ổn định cho toàn hệ. Hai tổ hợp cảm biến (vi khí hậu và khí độc) là các giác quan đầu vào: nhóm vi khí hậu giao tiếp số qua I2C, nhóm khí độc giao tiếp qua ADC (MQ-135, CH4) và UART (CO2). Khối RTC DS3231 cung cấp trục thời gian cho cơ chế bảo mật. Khối LoRa SX1278 là cổng giao tiếp vô tuyến hai chiều với Gateway qua SPI, đồng thời báo sự kiện thu/phát qua chân ngắt DIO0. Cuối cùng, khối chấp hành nhận lệnh điều khiển từ GPIO để đóng cắt rơ-le. Điểm mấu chốt cần nhấn mạnh là toàn bộ logic quyết định nằm hoàn toàn bên trong ESP32-S3; các khối ngoại vi chỉ làm nhiệm vụ cảm nhận hoặc chấp hành, không tham gia tính toán. Cách phân bổ này hiện thực hóa đúng mô hình chia tải nhị phân cục bộ (Local Binary Offloading) đã chứng minh là tối ưu ở chương 2.
+
+\subsubsection{Lựa chọn giải pháp công nghệ lõi}
+a) \textbf{Khối Vi xử lý trung tâm: Module ESP32-S3-WROOM-1}
+
+Trong khi các dòng chip ESP8266 đã hoàn toàn lỗi thời do bộ nhớ eo hẹp và ESP32 phiên bản tiêu chuẩn thiếu đi tập lệnh tối ưu cho Edge, đồ án quyết định sử dụng module SoC ESP32-S3-WROOM-1 làm khối xử lý trung tâm. ESP32-S3 sở hữu vi kiến trúc lõi kép Xtensa 32-bit LX7, hoạt động ở xung nhịp cực đại $240\text{ MHz}$. 
+
+Hình \ref{fig:espwroom1} trình bày cấu trúc phần cứng bên trong module ESP32-S3-WROOM-1. Có thể thấy module được thiết kế dưới dạng một hệ thống tích hợp hoàn chỉnh (System-on-Module – SoM), trong đó các thành phần cần thiết cho hoạt động của vi điều khiển đều được tích hợp sẵn trên cùng một khối phần cứng.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\linewidth]{Thuc_Hanh/Image/blockdiagram.png}
+    \caption{Cấu trúc phần cứng của module ESP32-S3-WROOM-1}
+    \label{fig:espwroom1}
+\end{figure}
+Trung tâm của module là chip ESP32-S3, đóng vai trò thực hiện các tác vụ xử lý dữ liệu, điều khiển hệ thống và quản lý truyền thông. Chip này được cấp nguồn hoạt động ở mức điện áp 3.3 V thông qua chân cấp nguồn của module. Tín hiệu EN (Enable) được sử dụng để kích hoạt hoặc khởi động lại vi điều khiển khi cần thiết.
+
+Để đảm bảo hoạt động ổn định và chính xác, ESP32-S3 sử dụng bộ dao động thạch anh ngoài 40 MHz Crystal làm nguồn xung nhịp tham chiếu. Từ tín hiệu đồng hồ này, các bộ PLL nội bộ sẽ tạo ra các mức tần số cao hơn phục vụ cho lõi xử lý Xtensa LX7 và các khối ngoại vi bên trong hệ thống.
+
+Bộ nhớ chương trình được lưu trữ trong khối QSPI Flash kết nối trực tiếp với vi điều khiển thông qua giao diện Quad SPI tốc độ cao. Toàn bộ firmware của hệ thống, các thư viện phần mềm và hệ thống tập tin SPIFFS đều được lưu trữ trên bộ nhớ Flash này. Bên cạnh đó, module còn hỗ trợ mở rộng PSRAM thông qua giao diện SPI chuyên dụng nhằm tăng dung lượng bộ nhớ cho các ứng dụng Edge Computing hoặc xử lý dữ liệu có kích thước lớn.
+
+Khối GPIOs cung cấp các chân vào/ra số cho phép ESP32-S3 giao tiếp với cảm biến, cơ cấu chấp hành và các thiết bị ngoại vi khác. Thông qua các chân này, vi điều khiển có thể triển khai nhiều giao thức truyền thông như UART, SPI, I2C, PWM hoặc ADC phục vụ cho việc thu thập dữ liệu và điều khiển hệ thống.
+
+Đối với chức năng truyền thông không dây, ESP32-S3 tích hợp bộ thu phát RF bên trong chip. Trước khi tín hiệu được đưa tới anten, tín hiệu RF phải đi qua khối RF Matching. Đây là mạng phối hợp trở kháng có nhiệm vụ tối ưu hóa việc truyền năng lượng giữa bộ thu phát và anten, giảm hiện tượng phản xạ tín hiệu, từ đó cải thiện hiệu suất phát sóng và độ nhạy thu của hệ thống Wi-Fi/Bluetooth.
+
+Cuối cùng, tín hiệu RF sau khi được phối hợp trở kháng sẽ được truyền tới anten tích hợp trên module, cho phép ESP32-S3 thực hiện các kết nối không dây như Wi-Fi 2.4 GHz và Bluetooth Low Energy (BLE). Nhờ tích hợp sẵn toàn bộ chuỗi RF từ bộ thu phát đến anten, ESP32-S3-WROOM-1 giúp giảm đáng kể độ phức tạp trong thiết kế phần cứng và nâng cao độ tin cậy của hệ thống.
+
+Từ cấu trúc trên có thể thấy ESP32-S3-WROOM-1 không chỉ là một vi điều khiển đơn thuần mà là một nền tảng phần cứng hoàn chỉnh, tích hợp đầy đủ các thành phần xử lý, bộ nhớ, khối RF và giao tiếp ngoại vi. Điều này giúp giảm chi phí thiết kế, rút ngắn thời gian phát triển sản phẩm và đặc biệt phù hợp với các ứng dụng IoT biên yêu cầu khả năng xử lý thời gian thực, lưu trữ dữ liệu cục bộ và kết nối không dây ổn định.
+
+b) \textbf{Công nghệ Giao tiếp Vô tuyến: Module Lora SX1278 (SPI Bus)}
+
+Để thực hiện truyền dữ liệu từ nút cảm biến đến Gateway với khoảng cách xa và mức tiêu thụ năng lượng thấp, đồ án sử dụng module Ra-02 tích hợp chip thu phát vô tuyến SX1278 của Semtech. Đây là bộ thu phát RF hỗ trợ công nghệ điều chế LoRa (Long Range), cho phép truyền dữ liệu ở khoảng cách lên tới vài kilomet trong điều kiện thực tế, đồng thời vẫn đảm bảo công suất tiêu thụ thấp phù hợp với các hệ thống IoT.
+
+Hình \ref{Hình 3.4} trình bày cấu trúc phần cứng của module SX1278. Có thể thấy chip được tích hợp đầy đủ các khối xử lý tín hiệu RF, bộ điều chế LoRa và các giao diện điều khiển cần thiết để xây dựng một hệ thống truyền thông vô tuyến hoàn chỉnh.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{Thuc_Hanh/Image/LoraSX1278.png}
+\caption{Kiến trúc phần cứng của module LoRa SX1278}
+\label{Hình 3.4}
+\end{figure}
+
+Tại tầng RF, SX1278 tích hợp các khối PA (Power Amplifier) và LNA (Low Noise Amplifier). Khối PA có nhiệm vụ khuếch đại tín hiệu trước khi phát ra anten nhằm tăng phạm vi truyền dẫn, trong khi LNA khuếch đại các tín hiệu thu có công suất rất nhỏ từ môi trường, giúp cải thiện độ nhạy của bộ thu. Theo thông số kỹ thuật của nhà sản xuất, SX1278 có thể đạt công suất phát tối đa khoảng +20 dBm và độ nhạy thu lên tới -148 dBm khi hoạt động ở chế độ LoRa.
+
+Sau tầng RF, tín hiệu được đưa tới khối Mixer và Single-to-Differential Converter để thực hiện quá trình chuyển đổi và xử lý tín hiệu trung tần. Các khối này có vai trò chuyển đổi giữa miền tương tự và miền số, chuẩn bị dữ liệu cho quá trình điều chế và giải điều chế bên trong chip.
+
+Trung tâm của hệ thống thu phát là khối Frac-N Frequency Synthesizer kết hợp với bộ dao động tinh thể ngoài 32 MHz XO (Crystal Oscillator). Bộ tổng hợp tần số này tạo ra tần số sóng mang RF với độ chính xác cao, cho phép SX1278 hoạt động trong các dải tần khác nhau như 169 MHz, 433 MHz, 868 MHz và 915 MHz. Trong đồ án này, module được cấu hình hoạt động tại băng tần 433 MHz, phù hợp với điều kiện triển khai thực tế và có khả năng xuyên vật cản tốt.
+
+Khối LoRa Demodulator/Modulator thực hiện chức năng điều chế và giải điều chế tín hiệu theo kỹ thuật Chirp Spread Spectrum (CSS). Đây là công nghệ cốt lõi của LoRa, cho phép trải phổ tín hiệu trên một băng thông rộng nhằm tăng khả năng chống nhiễu, nâng cao độ nhạy thu và mở rộng khoảng cách truyền dẫn. Ngoài chế độ LoRa, SX1278 còn hỗ trợ các phương thức điều chế truyền thống như FSK, GFSK và OOK để đáp ứng nhiều yêu cầu ứng dụng khác nhau.
+
+Để nâng cao độ tin cậy của truyền thông, chip còn tích hợp các khối RSSI (Received Signal Strength Indicator) và AFC (Automatic Frequency Correction). RSSI được sử dụng để đánh giá cường độ tín hiệu thu, trong khi AFC tự động hiệu chỉnh sai lệch tần số giữa bộ phát và bộ thu, giúp duy trì liên kết ổn định ngay cả khi môi trường truyền dẫn thay đổi.
+
+Dữ liệu truyền và nhận được lưu trữ tạm thời trong Packet Engine và FIFO Memory 256 Byte. Khối này hỗ trợ đóng gói khung dữ liệu, kiểm tra CRC, phát hiện lỗi và quản lý bộ đệm truyền thông. Nhờ đó, vi điều khiển không cần xử lý trực tiếp từng bit dữ liệu mà chỉ cần trao đổi dữ liệu với bộ đệm FIFO thông qua giao diện SPI.
+
+Việc cấu hình và điều khiển SX1278 được thực hiện thông qua giao diện SPI cùng các chân ngắt DIO0–DIO5. Trong hệ thống đề xuất, ESP32-S3 đóng vai trò bộ điều khiển trung tâm, sử dụng giao thức SPI để cấu hình các thanh ghi của SX1278, ghi dữ liệu vào FIFO trước khi phát và đọc dữ liệu nhận được từ bộ thu.
+
+c) \textbf{Thiết kế khối nguồn}
+
+Nhiệm vụ quan trọng đầu tiên của khối nguồn là quản lý chu trình sạc/xả của viên pin này nhằm chống lại hiện tượng phù tụ, đoản mạch hoặc suy giảm tuổi thọ tế bào hóa học . Linh kiện được tích hợp cho nhiệm vụ này là vi mạch quản lý sạc TP4056. 
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{Thuc_Hanh/Image/TP4056.png}
+\caption{Mạch quản lý sạc TP4056}
+\label{Hình 3.5}
+\end{figure}
+Thuật toán sạc của TP4056 tuân thủ nghiêm ngặt quy trình sạc hai giai đoạn tuyến tính: Dòng điện không đổi / Điện áp không đổi (Constant Current / Constant Voltage - CC/CV). Về mặt toán học, dòng sạc tối đa $I_{CHG}$ được lập trình thông qua một điện trở $R_{PROG}$ nối từ chân PROG xuống mass, tuân theo phương trình $I_{CHG} = 1200 / R_{PROG}$. Với cấu hình $R_{PROG} = 1.2\text{k}\Omega$, hệ thống cho phép dòng sạc danh định là $1\text{A}$. Khi điện áp pin tiệm cận ngưỡng cắt $4.2\text{V}$, IC tự động chuyển sang pha sạc áp không đổi (CV), dòng sạc sẽ giảm dần theo hàm mũ cho đến khi tụt xuống dưới $1/10$ dòng CC ban đầu ($100\text{mA}$), lúc này chu trình sạc được ngắt hoàn toàn để bảo vệ điện cực \cite{texas2018battery}. Để thiết lập một lớp khiên bảo vệ vật lý nhiều tầng, TP4056 được phối hợp với IC bảo vệ DW01 và cụm MOSFET xả/sạc kép. DW01 đóng vai trò như một lính gác điện áp (Voltage Monitor); nếu nó phát hiện điện áp xả của pin rơi xuống dưới ngưỡng $2.4\text{V}$ (Over-discharge) hoặc dòng xả vượt quá $3\text{A}$ (Short Circuit), nó sẽ lập tức ngắt điện áp kích ở cực Gate của MOSFET, cô lập hoàn toàn viên pin khỏi tải tiêu thụ.
+
+Nhiệm vụ thứ hai, và cũng là nguyên nhân gây thất thoát năng lượng lớn nhất, là quá trình hạ áp (Step-down Regulation) từ dải biến thiên $3.0\text{V}-4.2\text{V}$ của pin xuống mức $3.3\text{V}$ phẳng tuyệt đối. Mức điện áp $3.3\text{V}$ này là bắt buộc để duy trì tần số dao động chuẩn xác của bộ thạch anh trên ESP32-S3 và đảm bảo IC LoRa SX1278 không bị cháy. Các bo mạch phát triển giá rẻ thường lạm dụng IC ổn áp tuyến tính AMS1117-3.3V. Tuy nhiên, kiến trúc của AMS1117 sử dụng BJT (Bipolar Junction Transistor) làm phần tử dẫn, sinh ra dòng tĩnh (Quiescent Current - $I_Q$) khổng lồ lên tới $5\text{mA}$ và mức điện áp rơi (Dropout Voltage - $V_{DO}$) $\approx 1.1\text{V}$. Điều này đồng nghĩa với việc, nếu điện áp pin sụt xuống $4.0\text{V}$, đầu ra của AMS1117 chỉ còn $2.9\text{V}$, làm hệ thống sập nguồn ngay cả khi pin vẫn còn đầy $80\%$.
+
+Để phá vỡ rào cản này, bản thiết kế Schematic đã thay thế hoàn toàn bằng IC LDO Low-Power AP2112K-3.3V. Kiến trúc của AP2112K sử dụng P-Channel MOSFET làm phần tử dẫn, cho phép ép mức điện áp rơi $V_{DO}$ xuống chỉ còn $250\text{mV}$ khi chạy đầy tải $600\text{mA}$. Quan trọng hơn, dòng tĩnh $I_Q$ của IC này chỉ xấp xỉ $55 \mu\text{A}$ \cite{diodes2015ap2112}. Tổn hao công suất (Power Dissipation - $P_D$) tỏa nhiệt trên LDO được tính bằng phương trình:
+\begin{equation}
+    P_D = (V_{IN} - V_{OUT}) \times I_{LOAD} + V_{IN} \times I_Q
+\end{equation}
+Tuy nhiên, điểm nhấn học thuật gây tranh cãi và đáng chú ý nhất trong thiết kế Schematic này là sự đánh đổi có chủ đích (Trade-off) về mặt động lực học năng lượng: Hệ thống từ chối hoàn toàn việc sử dụng Công tắc tải (Load Switch MOSFET) để cắt điện các cảm biến khí. Các nghiên cứu IoT thông thường thường sử dụng MOSFET để cắt điện các cảm biến ăn dòng lớn khi MCU vào chế độ ngủ (Deep Sleep), gọi là cơ chế đánh xung nhiệt (Pulsed Heating). Nhưng đối với cảm biến khí oxit kim loại (MOX) như MQ-135 (đo $NH_3$) và Cảm biến CH4 DFRobot, bề mặt phản ứng $SnO_2$ bắt buộc phải được nung nóng liên tục ở dải nhiệt độ $>300^\circ\text{C}$ để duy trì trạng thái cân bằng nhiệt động học (Thermal Equilibrium) với các phân tử oxy trong không khí. Nếu cắt nguồn và cấp lại đột ngột, sự biến thiên nhiệt độ (Thermal Shock) sẽ làm đường điện trở nền ($R_0$) của cảm biến bị trôi (Baseline Drift) dữ dội. Thời gian làm nóng để cảm biến ổn định trở lại (Warm-up time) có thể kéo dài từ 5 đến 15 phút, gây sai số đo lường lên tới hàng chục ppm, phá vỡ hoàn toàn độ tin cậy của một hệ thống cảnh báo khí độc công nghiệp \cite{barsan2001conduction}.
+
+Do đó, thiết kế mạch quyết định đấu nối thẳng nguồn +3.3V\_SYS từ AP2112K vào chân cấp điện của toàn bộ mảng cảm biến. Bo mạch chấp nhận việc duy trì một dòng tải liên tục (Continuous Current Draw) $\approx 200\text{mA}$ cho cuộn dây Heater của MQ-135 và CH4. Quyết định kỹ thuật này hy sinh một phần tuổi thọ pin để đổi lấy độ chính xác hóa học tuyệt đối (Absolute Chemical Precision). Để bù đắp lại, vi điều khiển ESP32-S3 được cấu hình vào trạng thái Deep Sleep cực đoan nhất, ngắt toàn bộ lõi CPU và RAM, chỉ tiêu thụ $7\mu\text{A}$ thời gian rảnh, nhường toàn bộ năng lượng pin cho cảm biến khí "thở".
+
+Hình \ref{Hình 3.5} mô tả luồng đi của năng lượng: từ cổng USB Type-C cấp nguồn $5\text{V}$ vào mạch sạc TP4056, sạc cho pin Lithium. Dòng điện từ pin đi qua IC bảo vệ DW01 trước khi tiến vào chân $V_{IN}$ của LDO AP2112K.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\linewidth]{Thuc_Hanh/Image/KhoiNguon.pdf}
+    \caption{Luồng hoạt động của khối nguồn}
+    \label{Hình 3.5}
+\end{figure}
+
+d) \textbf{Tổ hợp cảm biến vi khí hậu (SHT31, BMP180, BH1750)}
+
+Để lượng hóa trạng thái vi khí hậu chuồng nuôi, Node tích hợp một tổ hợp cảm biến số giao tiếp qua bus I2C, trong đó mỗi cảm biến đảm nhiệm một nhóm đại lượng vật lý riêng. 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.76\linewidth]{Thuc_Hanh/Image/SHT31.png}
+    \caption{Cảm biến nhiệt độ và độ ẩm SHT31 (giao tiếp I2C)}
+    \label{fig:ch3_sht31}
+\end{figure}
+Cảm biến nhiệt độ và độ ẩm SHT31 của Sensirion được chọn làm cảm biến chủ lực cho bài toán Chỉ số nhiệt ẩm (THI). SHT31 cho sai số nhiệt độ điển hình $\pm 0{,}3\,^\circ C$ và sai số độ ẩm $\pm 2\%$RH, nằm trong giới hạn sai số dưới $5\%$ mà đề tài cam kết ở chương 1 \cite{sensirion2018sht31}. Cảm biến tích hợp sẵn mạch chuyển đổi ADC và bộ hiệu chỉnh tuyến tính hóa bên trong, đồng thời đính kèm 8 bit CRC cho mỗi cặp byte dữ liệu trả về; nhờ đó firmware tại Node có thể loại bỏ ngay các khung dữ liệu lỗi do nhiễu bus mà không làm sai lệch khâu tính toán THI phía sau. 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{Thuc_Hanh/Image/BMP180.png}
+    \caption{Cảm biến áp suất khí quyển BMP180 (giao tiếp I2C)}
+    \label{fig:ch3_bmp180}
+\end{figure}
+Cảm biến áp suất khí quyển BMP180 của Bosch được bổ sung nhằm cung cấp tham chiếu áp suất phục vụ phát hiện xu hướng thời tiết và bù độ cao; BMP180 lưu sẵn 11 hệ số hiệu chỉnh trong bộ nhớ EEPROM nội, cho phép firmware đọc một lần lúc khởi tạo và áp dụng chuỗi công thức bù nhiệt để quy đổi giá trị thô thành áp suất tuyệt đối chính xác \cite{bosch2013bmp180}. 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{Thuc_Hanh/Image/BH1750.png}
+    \caption{Cảm biến cường độ ánh sáng BH1750 (giao tiếp I2C)}
+    \label{fig:ch3_bh1750}
+\end{figure}
+Cảm biến cường độ ánh sáng BH1750 \cite{rohm2011bh1750} đo độ rọi (lux) phục vụ giám sát chu kỳ chiếu sáng nhân tạo trong chuồng kín, một yếu tố ảnh hưởng trực tiếp đến nhịp sinh học và năng suất của gia cầm.
+
+Một quyết định kiến trúc quan trọng trong sơ đồ nguyên lý là việc bố trí các cảm biến này trên đường bus I2C dùng chung với các đường kéo lên (pull-up) giá trị $4{,}7\,\text{k}\Omega$ (linh kiện R16, R17 trên Schematic). Giá trị điện trở kéo lên được tính toán dựa trên điện dung ký sinh tổng cộng của bus và tốc độ truyền mong muốn theo ràng buộc của chuẩn I2C \cite{nxp2014i2c}: điện trở quá lớn làm sườn lên của tín hiệu bị bo tròn gây lỗi ở tốc độ cao, trong khi điện trở quá nhỏ làm tăng dòng tiêu thụ khi bus ở mức thấp. Mức $4{,}7\,\text{k}\Omega$ là điểm cân bằng tiêu chuẩn cho bus I2C tốc độ 100--400 kHz với vài cảm biến mắc song song. Bảng \ref{Bảng 3.2} tổng hợp đặc tính của tổ hợp cảm biến vi khí hậu.
+
+\begin{table}[H]
+\centering
+\caption{Đặc tính kỹ thuật của tổ hợp cảm biến vi khí hậu}
+\label{Bảng 3.2}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{p{2.4cm} p{3.0cm} p{2.2cm} p{2.0cm} p{3.4cm}}
+\hline
+\textbf{Cảm biến} & \textbf{Đại lượng đo} & \textbf{Giao tiếp} & \textbf{Địa chỉ} & \textbf{Sai số điển hình} \\ \hline
+SHT31 & Nhiệt độ, độ ẩm & I2C & 0x44 & $\pm 0{,}3\,^\circ C$ / $\pm 2\%$RH \\ 
+BMP180 & Áp suất, nhiệt độ & I2C & 0x77 & $\pm 0{,}12$ hPa \\ 
+BH1750 & Cường độ sáng & I2C & 0x23 & $\pm 20\%$ (lux) \\ \hline
+\end{tabular}
+\end{table}
+
+e) \textbf{Tổ hợp cảm biến khí độc (MQ-135, CH4, CO2)}
+
+Trọng tâm an toàn sinh học của hệ thống nằm ở khả năng phát hiện khí độc tích tụ, đặc biệt là Amoniac ($NH_3$) sinh ra từ quá trình phân hủy chất thải đã phân tích ở chương 2. Để đo $NH_3$, đề tài sử dụng cảm biến khí oxit kim loại bán dẫn (Metal-Oxide Semiconductor -- MOX) dòng MQ-135. Nguyên lý hoạt động của MQ-135 dựa trên sự thay đổi điện trở bề mặt của lớp màng nhạy khí $SnO_2$ khi hấp phụ các phân tử khí khử: khi nồng độ $NH_3$ tăng, điện trở cảm biến giảm, và tỉ số $R_s/R_0$ (điện trở trong khí cần đo trên điện trở trong không khí sạch) được quy đổi sang nồng độ ppm thông qua đường đặc tuyến log-log của nhà sản xuất \cite{barsan2001conduction}. Tín hiệu đầu ra của MQ-135 là điện áp tương tự, được đưa về chân ADC của ESP32-S3 (đường A0 trên Schematic) qua đầu nối J9. Bên cạnh $NH_3$, hệ thống dự phòng thêm hai kênh đo khí mở rộng: cảm biến CH4 (đo khí Mêtan, ngõ ra tương tự, đầu nối J11) phục vụ cảnh báo khí dễ cháy sinh ra từ phân hủy yếm khí, và cảm biến CO2 giao tiếp số qua UART (đầu nối J7/J8) cho phép theo dõi mức độ thông thoáng của chuồng.
+
+Tóm tắt mô tả cho các cảm biến khí độc được thể hiện trong Bảng \ref{Bảng 3.3}
+\begin{table}[H]
+\centering
+\caption{Tổ hợp cảm biến khí và giao tiếp tương ứng}
+\label{Bảng 3.3}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{p{2.6cm} p{3.2cm} p{2.6cm} p{4.2cm}}
+\hline
+\textbf{Cảm biến} & \textbf{Khí mục tiêu} & \textbf{Giao tiếp} & \textbf{Đặc điểm} \\ \hline
+MQ-135 & $NH_3$ (Amoniac) & Analog (ADC, A0) & Màng MOX $SnO_2$, cần nung nóng \\ 
+CH4 & Mêtan ($CH_4$) & Analog (ADC) & Cảnh báo khí dễ cháy \\ 
+CO2 & Cacbonic ($CO_2$) & UART (số) & Theo dõi độ thông thoáng \\ \hline
+\end{tabular}
+\end{table}
+
+f) \textbf{Khối thời gian thực (RTC DS3231) và khối chấp hành}
+
+Để hiện thực cơ chế chống tấn công phát lại (Replay Attack) dựa trên nhãn thời gian đã trình bày ở chương 2, Node được trang bị IC đồng hồ thời gian thực DS3231 \cite{maxim2015ds3231} giao tiếp qua I2C. 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{Thuc_Hanh/Image/DS3231.png}
+    \caption{Module đồng hồ thời gian thực DS3231}
+    \label{fig:ch3_ds3231}
+\end{figure}
+DS3231 tích hợp sẵn bộ bù nhiệt bằng tinh thể thạch anh (TCXO), cho sai số cực thấp khoảng $\pm 2$ ppm (tương đương dưới một phút sai lệch mỗi năm), bảo đảm hai đầu Node và Gateway luôn có một mốc thời gian chung đáng tin cậy để cửa sổ xác thực $\Delta t < 5\,\text{s}$ hoạt động chính xác. Chân ngắt/xung vuông (SQW) của DS3231 còn có thể được cấu hình để phát xung định kỳ đánh thức vi điều khiển khỏi chế độ ngủ sâu, đóng vai trò một nguồn đánh thức theo thời gian độc lập với bộ định thời nội của ESP32-S3. Nguồn nuôi cho mạch dao động của DS3231 được duy trì liên tục để đồng hồ không bị mất giờ qua mỗi chu kỳ ngủ sâu của vi điều khiển.
+
+Ở đầu ra điều khiển, Node bố trí ba kênh chấp hành (Act1, Act2, Act3 -- các đầu nối J20, J21, J22 trên Schematic) đưa tín hiệu mức logic tới các module rơ-le bên ngoài để đóng/cắt các thiết bị cơ điện công suất lớn như quạt thông gió, hệ thống phun sương làm mát hoặc đèn sưởi. Việc tách riêng ba kênh cho phép thuật toán Điện toán biên thực thi các kịch bản điều khiển độc lập (ví dụ: kênh 1 cho quạt hút, kênh 2 cho phun sương, kênh 3 cho đèn sưởi), thay vì gộp chung một ngõ ra. Đây chính là mắt xích cuối cùng khép kín vòng điều khiển cục bộ tại biên: từ cảm biến $\rightarrow$ FSM ra quyết định $\rightarrow$ chân GPIO $\rightarrow$ rơ-le, toàn bộ diễn ra trong chưa đầy 50 ms mà không cần bất kỳ kết nối nào ra bên ngoài.
+
+
+
+
+
+\subsection{Thiết kế kiến trúc phần mềm đa nhiệm trên FreeRTOS}
+Phần cứng dù mạnh mẽ cũng chỉ phát huy hiệu quả khi được điều phối bởi một kiến trúc phần mềm hợp lý. Dựa trên cơ sở lý thuyết về hệ điều hành thời gian thực và cơ chế phân luồng đa nhân đã trình bày ở chương 2, phần này cụ thể hóa kiến trúc firmware của Node thành một tập các tác vụ (Task) FreeRTOS chạy song song, được gán cứng vào hai nhân vật lý của ESP32-S3 nhằm bảo đảm tính tất định của luồng điều khiển an toàn.
+
+\subsubsection{Phân rã hệ thống thành các tác vụ}
+Toàn bộ chức năng của Node được phân rã thành sáu tác vụ độc lập, mỗi tác vụ có một mức ưu tiên và một vùng ngăn xếp riêng. Việc phân rã tuân theo nguyên tắc tách biệt mối quan tâm (Separation of Concerns): mỗi tác vụ chỉ chịu trách nhiệm một nhóm chức năng đồng nhất, trao đổi dữ liệu với nhau thông qua các hàng đợi (Queue) và cờ hiệu (Semaphore/Mutex) để tránh tranh chấp dữ liệu (Race Condition).
+
+% ===================================================================
+% PlantUML cho Hình 3.9 - render và lưu thành: Thuc_Hanh/Image/Ch3_TaskArch.png
+% @startuml
+% skinparam backgroundColor white
+% package "CORE 0 (PRO_CPU) - Vo tuyen & Bao mat" {
+%   [Task_LoRa_TX/RX\n(uu tien cao)] as T1
+%   [Task_Crypto\nAES-128 / ASCON] as T2
+%   [Task_Sync_Offline\n(uu tien thap)] as T3
+% }
+% package "CORE 1 (APP_CPU) - Dien toan bien" {
+%   [Task_Sensor\n(doc I2C/ADC/UART)] as T4
+%   [Task_Edge_FSM\n(uu tien cao nhat)] as T5
+%   [Task_Telemetry\n(USB JSON)] as T6
+% }
+% queue "Queue du lieu cam bien" as Q1
+% queue "Queue goi gui" as Q2
+% T4 --> Q1
+% Q1 --> T5
+% T5 --> Q2 : goi can gui
+% Q2 --> T2
+% T2 --> T1 : goi da ma hoa
+% T1 --> T3 : khi mat ACK
+% T5 --> [GPIO Ro-le] : lenh dieu khien
+% T4 ..> T6
+% @enduml
+% ===================================================================
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\linewidth]{Thuc_Hanh/Image/PhanLuongDaNhiemj.pdf}
+    \caption{Kiến trúc phân luồng đa nhiệm trên ESP32-S3}
+    \label{fig:ch3_task}
+\end{figure}
+
+Hình \ref{fig:ch3_task} mô tả nguyên tắc gán nhân: Core 0 (PRO\_CPU) gánh toàn bộ các tác vụ liên quan đến vô tuyến và mật mã -- vốn có tính chất "chặn" (blocking) và tiêu tốn nhiều chu kỳ máy khi chờ truyền/nhận trên SPI -- bao gồm tác vụ phát/thu LoRa, tác vụ mã hóa AES-128/ASCON và tác vụ đồng bộ dữ liệu ngoại tuyến chạy nền ở mức ưu tiên thấp. Core 1 (APP\_CPU) được giữ "sạch" để chuyên trách Điện toán biên: tác vụ đọc cảm biến, tác vụ máy trạng thái FSM (mang mức ưu tiên cao nhất hệ thống) và tác vụ phát telemetry. Nhờ sự cô lập này, ngay cả khi một gói LoRa nhiễu rác dội vào và làm bận Core 0, tác vụ FSM trên Core 1 vẫn được lập lịch tức thời để ra lệnh đóng rơ-le, bảo đảm độ trễ điều khiển luôn dưới ngưỡng 50 ms. Bảng \ref{Bảng 3.4} liệt kê chi tiết tập tác vụ cùng mức ưu tiên và nhân được gán.
+
+\begin{table}[H]
+\centering
+\caption{Phân rã tác vụ FreeRTOS: gán nhân, mức ưu tiên và kích thước Stack dự kiến}
+\label{Bảng 3.4}
+\renewcommand{\arraystretch}{1.4}
+\small
+\begin{tabular}{p{2.8cm} p{1.1cm} p{1.3cm} p{1.7cm} p{6.2cm}}
+\hline
+\textbf{Tác vụ} & \textbf{Nhân} & \textbf{Ưu tiên} & \textbf{Stack (B)} & \textbf{Chức năng} \\ \hline
+Task\_Edge\_FSM & Core 1 & 6 & 3072 & Đối chiếu ngưỡng, ra quyết định, điều khiển rơ-le (tới hạn $<50$ ms) \\ 
+Task\_LoRa & Core 0 & 5 & 4096 & Phát/thu gói, chờ ACK, đo RSSI/SNR \\ 
+Task\_Crypto & Core 0 & 4 & 4096 & Mã hóa/giải mã AES-128-GCM hoặc ASCON-128 \\ 
+Task\_Sensor & Core 1 & 3 & 4096 & Đọc I2C/ADC/UART, lọc nhiễu (EMA/Median/Kalman) \\ 
+Task\_Telemetry & Core 1 & 2 & 4096 & Phát JSON trạng thái qua USB phục vụ giám sát \\ 
+Task\_Sync\_Off & Core 0 & 1 & 3584 & Ghi và đồng bộ lại dữ liệu lưu ngoại tuyến (SPIFFS) \\ \hline
+\end{tabular}
+\end{table}
+
+Việc gán mức ưu tiên tuân theo nguyên tắc \textit{tầm quan trọng đối với an toàn} kết hợp tinh thần lập lịch đơn điệu theo tần suất (Rate Monotonic) \cite{liu1973scheduling}: tác vụ FSM an toàn -- chịu ràng buộc trễ ngặt nhất ($<50$ ms) -- được gán ưu tiên cao nhất (6); kế đến là các tác vụ vô tuyến nhạy cảm về thời gian (LoRa, Crypto, ưu tiên 5--4); tác vụ đọc cảm biến định kỳ ở mức trung bình (3); còn các tác vụ "mềm" như phát telemetry và đồng bộ nền được đặt ưu tiên thấp nhất (2--1) để không bao giờ cản trở luồng điều khiển tới hạn. Kích thước Stack ở cột thứ tư được ước lượng ban đầu dựa trên độ sâu chuỗi lời gọi hàm và dung lượng bộ đệm cục bộ của mỗi tác vụ (bộ đệm gói tin, trạng thái thuật toán mã hóa, vùng định dạng chuỗi JSON), cộng thêm biên dự phòng an toàn; các giá trị này là \emph{dự kiến} và sẽ được hiệu chỉnh chính xác bằng phép đo High-Water Mark thực tế ở Chương 5 nhằm vừa tránh tràn Stack vừa không lãng phí RAM.
+
+Để thống nhất với các thuật ngữ nêu trong yêu cầu thiết kế, cần làm rõ ánh xạ tên gọi: \texttt{Task\_Sensor} chính là tác vụ đọc cảm biến trên bus I2C (còn gọi là \textbf{Task\_Sensor\_I2C}); cụm xử lý biên gồm lọc Kalman (thực thi trong \texttt{Task\_Sensor}/\texttt{Task\_Edge\_FSM}) phối hợp với mã hóa trong \texttt{Task\_Crypto} tương ứng với khối \textbf{Task\_Kalman\_AES}; và \texttt{Task\_LoRa} đảm nhiệm vai trò phát gói \textbf{Task\_LoRa\_TX}. Ba khối chức năng này tạo thành một đường ống (pipeline) sản xuất -- tiêu thụ nối với nhau bằng các Hàng đợi, sẽ được trình bày ở mục tiếp theo.
+
+\subsubsection{Cơ chế giao tiếp liên tác vụ và đồng bộ}
+Để các tác vụ phối hợp nhịp nhàng mà không giẫm chân nhau, firmware sử dụng ba nguyên tắc đồng bộ của FreeRTOS. Thứ nhất, các Hàng đợi (Queue) đóng vai trò băng chuyền dữ liệu một chiều: tác vụ đọc cảm biến đẩy cấu trúc dữ liệu môi trường vào hàng đợi, tác vụ FSM lấy ra để xử lý; tương tự, FSM đẩy gói cần gửi vào hàng đợi cho tác vụ mã hóa và LoRa. Cơ chế hàng đợi vừa truyền dữ liệu vừa tự động đồng bộ nhịp sản xuất -- tiêu thụ, đồng thời sao chép dữ liệu nên loại bỏ rủi ro hai tác vụ cùng truy cập một vùng nhớ. Thứ hai, Cờ hiệu nhị phân (Binary Semaphore) được dùng để báo hiệu sự kiện ngắt: khi chân DIO0 của SX1278 phát ngắt báo đã nhận xong gói, trình phục vụ ngắt (ISR) chỉ "nhả" một cờ hiệu, đánh thức tác vụ LoRa xử lý phần nặng bên ngoài ngữ cảnh ngắt -- một thực hành chuẩn giúp giữ cho ISR cực ngắn. Thứ ba, Mutex (cờ loại trừ tương hỗ) bảo vệ các tài nguyên dùng chung như bus I2C hay biến cấu hình toàn cục, bảo đảm tại một thời điểm chỉ một tác vụ được truy cập, tránh hỏng dữ liệu do truy cập đồng thời.
+
+% --- Bổ sung phần RTOS ---
+\subsubsection{Thiết kế cơ chế bảo vệ bus I2C dùng chung bằng Mutex}
+Trên cơ sở lý thuyết về loại trừ tương hỗ và kế thừa ưu tiên đã trình bày ở Chương 2, phần này cụ thể hóa thiết kế đường ống xử lý đa nhiệm và cơ chế bảo vệ bus I2C của Node. Hình \ref{Hình 3.14} biểu diễn luồng dữ liệu dạng sản xuất -- tiêu thụ chạy xuyên qua ba khối tác vụ chính, cùng vị trí đặt Mutex bảo vệ tài nguyên dùng chung.
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\linewidth]{Thuc_Hanh/Image/cochedongbo.pdf}
+    \caption{Xử lý đa nhiệm và cơ chế Mutex cho bus I2C}
+    \label{Hình 3.14}
+\end{figure}
+Như sơ đồ thể hiện, bốn thiết bị SHT31, BMP180, BH1750 và DS3231 chia sẻ chung một bus I2C; ngoài ra biến cấu hình toàn cục cũng là tài nguyên dùng chung. Để loại trừ tranh chấp, đề tài thiết kế một Mutex duy nhất (\texttt{i2c\_mutex}) được khởi tạo một lần lúc hệ thống boot bằng \texttt{xSemaphoreCreateMutex()}. Quy ước truy cập được áp đặt nghiêm ngặt: bất kỳ tác vụ nào muốn thực hiện một giao dịch I2C đều phải giành Mutex bằng \texttt{xSemaphoreTake()} \emph{trước} khi phát điều kiện START, và chỉ trả lại bằng \texttt{xSemaphoreGive()} \emph{sau} khi đã phát điều kiện STOP -- toàn bộ giao dịch trở thành một vùng tới hạn (critical section) nguyên tử.
+
+Hai quyết định thiết kế quan trọng được áp dụng. Thứ nhất, lời gọi \texttt{xSemaphoreTake()} luôn kèm một \textit{thời hạn chờ} (timeout, ví dụ $100$ ms) thay vì chờ vô hạn: nếu không giành được Mutex trong thời hạn (dấu hiệu bus bị treo hoặc tác vụ giữ Mutex gặp sự cố), tác vụ đọc cảm biến sẽ bỏ qua chu kỳ đó và đánh dấu dữ liệu là không hợp lệ thay vì treo cứng -- bảo toàn nguyên tắc "không bao giờ chặn luồng điều khiển an toàn". Thứ hai, nhờ Mutex của FreeRTOS có cơ chế kế thừa ưu tiên, nếu tác vụ FSM ưu tiên cao tình cờ cần truy cập bus trong lúc tác vụ cảm biến ưu tiên thấp đang giữ Mutex, ưu tiên của tác vụ cảm biến sẽ được nâng tạm thời để nó nhanh chóng giải phóng bus, giới hạn cận trên thời gian chặn đúng bằng độ dài một giao dịch I2C như trong Hình \ref{fig:rtos_priority_inheritance}.
+
+Việc phân rã hệ thống thành mô hình đường ống (pipeline) với các tác vụ độc lập mang lại ưu điểm vượt trội về khả năng đáp ứng thời gian thực và tối ưu hóa hiệu suất CPU. Tuy nhiên, kiến trúc đa nhiệm này cũng đặt ra thách thức lớn về tính toàn vẹn dữ liệu khi nhiều tiến trình chạy song song có thể cùng yêu cầu truy xuất phần cứng tại một thời điểm. Đặc biệt đối với chuẩn giao tiếp đồng bộ yêu cầu sự chính xác cao về mặt xung nhịp như I2C, bất kỳ sự can thiệp đan xen nào từ một tác vụ khác trong lúc tín hiệu đang truyền tải đều có thể gây ra hiện tượng xung đột (bus collision) hoặc làm hỏng hoàn toàn khung dữ liệu (frame corruption). Do đó, việc thiết lập một cơ chế đồng bộ chặt chẽ không chỉ là giải pháp phòng ngừa lỗi, mà là điều kiện tiên quyết để đảm bảo chuỗi dữ liệu từ khâu sản xuất (đọc cảm biến) đến khâu tiêu thụ (xử lý thuật toán và truyền dẫn) luôn chính xác và đáng tin cậy.
+% --- Hết bổ sung phần RTOS ---
+
+\subsection{Thiết kế thuật toán Điện toán biên tại Node}
+Phần này thiết kế chi tiết ba thành phần thuật toán cốt lõi: chu trình lấy mẫu tiết kiệm năng lượng, khâu tiền xử lý -- lọc nhiễu dữ liệu cảm biến, và máy trạng thái hữu hạn (FSM) ra quyết định điều khiển. 
+
+\subsubsection{Lưu đồ chu trình hoạt động tổng thể của Node}
+Mỗi chu kỳ hoạt động của Node được thiết kế thành một chuỗi trạng thái tuần tự, bắt đầu từ lúc thức dậy và kết thúc bằng việc quay lại trạng thái ngủ. 
+\begin{figure}[H]
+    \centering
+    {\includegraphics[width=0.55\linewidth]{Thuc_Hanh/Image/NodeSequence.pdf}}
+    \caption{Lưu đồ chu trình hoạt động một chu kỳ của Node}
+    \label{fig:ch3_cycle}
+\end{figure}
+Việc mô hình hóa chu trình thành một lưu đồ tường minh như trong Hình \ref{fig:ch3_cycle} giúp bảo đảm rằng mọi nhánh xử lý -- kể cả nhánh lỗi -- đều được tính đến, đồng thời cho phép ước lượng chính xác thời gian thức (active time) phục vụ tính toán năng lượng.
+
+% ===================================================================
+% PlantUML cho Hình 3.10 - render và lưu thành: Thuc_Hanh/Image/Ch3_SensingCycle.png
+% @startuml
+% skinparam backgroundColor white
+% start
+% :Thuc day (timer RTC / ngat su kien);
+% :Khoi tao ngoai vi, doc ly do reset;
+% :Doc cam bien (SHT31, BMP180, BH1750,\nMQ-135, CH4, CO2);
+% :Loc nhieu per-signal (EMA/MA/Median);
+% :Tinh THI, doi chieu nguong -> FSM;
+% if (Vuot nguong nguy hiem?) then (co)
+%   :Dong ro-le chap hanh (<50ms);
+% else (khong)
+% endif
+% :Gan timestamp (DS3231) + dong goi payload;
+% :Ma hoa AES-128 / ASCON;
+% :Phat LoRa, cho ACK;
+% if (Co ACK?) then (co)
+%   :Cap nhat thong ke, dong bo backlog neu co;
+% else (khong)
+%   :Luu ban ghi vao SPIFFS (offline);
+% endif
+% :Phat telemetry (USB);
+% :Vao Deep Sleep / Light Sleep;
+% stop
+% @enduml
+% ===================================================================
+
+
+Chu trình mở đầu bằng sự kiện thức dậy, có thể đến từ bộ định thời theo chu kỳ (lấy mẫu định kỳ) hoặc từ một ngắt sự kiện khẩn cấp. Sau khi khởi tạo ngoại vi, Node đọc lần lượt toàn bộ cảm biến, đưa từng tín hiệu qua bộ lọc tương ứng, rồi tính chỉ số THI và đối chiếu với ma trận ngưỡng trong khối FSM. Nếu phát hiện vượt ngưỡng nguy hiểm, lệnh đóng rơ-le được phát ra ngay lập tức -- đây là nhánh tới hạn về thời gian, phải hoàn tất dưới 50 ms. Chỉ sau khi đã bảo đảm an toàn cục bộ, Node mới tiến hành gắn nhãn thời gian, đóng gói, mã hóa và phát dữ liệu qua LoRa. Việc đặt nhánh điều khiển an toàn \emph{trước} nhánh truyền thông là một quyết định thiết kế then chốt: nó bảo đảm tính mạng vật nuôi được ưu tiên tuyệt đối so với việc báo cáo số liệu.
+
+\subsubsection{Tiền xử lý và lọc nhiễu dữ liệu theo từng tín hiệu}
+Dữ liệu thô từ cảm biến luôn chứa thành phần nhiễu, và nếu đưa trực tiếp vào FSM sẽ gây ra hiện tượng dao động đóng/cắt rơ-le liên tục (chattering) quanh ngưỡng. Vì vậy, trước khi ra quyết định, mỗi tín hiệu được làm sạch bằng một bộ lọc số được lựa chọn riêng theo đúng đặc tính vật lý của nó -- một cách tiếp cận tinh tế hơn nhiều so với việc áp một bộ lọc chung cho mọi đại lượng.
+
+Nhiệt độ và độ ẩm biến thiên chậm, liên tục, nhiễu chủ yếu là nhiễu điện tử biên độ nhỏ; do đó chúng được lọc bằng bộ lọc trung bình mũ (Exponential Moving Average -- EMA), vừa làm mượt tốt vừa chỉ cần lưu một giá trị trạng thái nên rất tiết kiệm RAM:
+\begin{equation}
+    {y_t = \alpha \, x_t + (1-\alpha)\, y_{t-1}, \qquad 0 < \alpha < 1}.
+\end{equation}
+Trong đó hệ số làm mượt $\alpha$ được chọn ở mức $0{,}3$ để cân bằng giữa độ trễ đáp ứng và mức khử nhiễu. Áp suất khí quyển rất ổn định trong ngắn hạn nên được lọc bằng trung bình trượt (Moving Average -- MA) cửa sổ $N$ mẫu, cho hiệu quả khử nhiễu Gauss tốt nhất:
+\begin{equation}
+    {y_t = \frac{1}{N}\sum_{i=0}^{N-1} x_{t-i}}.
+\end{equation}
+Riêng cường độ ánh sáng có nhiều đột biến xung (bóng che, vật bay qua) nên được lọc bằng bộ lọc trung vị (Median), vốn miễn nhiễm với giá trị ngoại lai:
+\begin{equation}
+    {y_t = \mathrm{median}\{x_{t-N+1}, \dots, x_{t-1}, x_t\}}.
+\end{equation}
+Ngoài ra, firmware còn hiện thực bộ lọc Kalman một chiều \cite{kalman1960new} như một tùy chọn nâng cao cho các tín hiệu cần ước lượng tối ưu theo nghĩa thống kê. Bảng \ref{Bảng 3.5} tóm tắt chiến lược lọc theo từng tín hiệu cùng lý do lựa chọn.
+
+\begin{table}[H]
+\centering
+\caption{Chiến lược lọc nhiễu theo từng tín hiệu cảm biến}
+\label{Bảng 3.5}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{p{2.9cm} p{2.7cm} p{2.0cm} p{6.9cm}}
+\hline
+\textbf{Tín hiệu} & \textbf{Bộ lọc} & \textbf{Tham số} & \textbf{Lý do lựa chọn} \\ \hline
+Nhiệt độ, độ ẩm & EMA & $\alpha = 0{,}3$ & Biến đổi chậm, nhiễu nhỏ; bám xu hướng, ít RAM \\ 
+Áp suất & Average & $N = 8$ & Rất ổn định; khử nhiễu Gauss tối ưu \\ 
+Ánh sáng & Median & $N = 8$ & Nhiều đột biến xung; trung vị miễn nhiễm ngoại lai \\ 
+(Dự phòng) & Kalman 1D & $q, r$ & Ước lượng tối ưu khi cần độ chính xác cao \\ \hline
+\end{tabular}
+\end{table}
+
+\subsubsection{Máy trạng thái hữu hạn (FSM) ra quyết định điều khiển}
+Khối ra quyết định được thiết kế dưới dạng một Máy trạng thái hữu hạn (Finite State Machine -- FSM) gồm ba trạng thái: \textbf{AN TOÀN (SAFE)}, \textbf{CẢNH BÁO (WARNING)} và \textbf{KHẨN CẤP (EMERGENCY)}. Việc dùng FSM thay cho chuỗi câu lệnh điều kiện rời rạc mang lại hai lợi ích: thứ nhất, trạng thái hiện tại được lưu giữ nên hệ thống có "trí nhớ", tránh dao động đóng/cắt; thứ hai, có thể cài đặt cơ chế trễ (hysteresis) ở biên chuyển trạng thái để rơ-le không bị bật/tắt liên tục khi giá trị đo dao động sát ngưỡng.
+
+% ===================================================================
+% PlantUML cho Hình 3.11 - render và lưu thành: Thuc_Hanh/Image/Ch3_FSM.png
+% @startuml
+% skinparam backgroundColor white
+% [*] --> SAFE
+% state SAFE : Trong nguong an toan\nRo-le TAT
+% state WARNING : THI>72 hoac NH3>20ppm\nBat quat muc thap
+% state EMERGENCY : T>35C hoac NH3>25ppm\nhoac THI>78 -> Bat toan bo quat/phun suong
+% SAFE --> WARNING : vuot nguong canh bao
+% WARNING --> EMERGENCY : vuot nguong nguy hiem
+% EMERGENCY --> WARNING : ha xuong (co tre hysteresis)
+% WARNING --> SAFE : ve binh thuong (co tre)
+% EMERGENCY --> EMERGENCY : duy tri lam mat
+% @enduml
+% ===================================================================
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\linewidth]{Thuc_Hanh/Image/FSM.pdf}
+    \caption{FSM ra quyết định điều khiển vi khí hậu}
+    \label{fig:ch3_fsm}
+\end{figure}
+
+Logic chuyển trạng thái dựa trên việc đối chiếu đồng thời nhiều đại lượng đã lọc với ma trận ngưỡng an toàn sinh học đã thiết lập ở chương 1 và 2: nhiệt độ ($35\,^\circ C$ gây stress, $38\,^\circ C$ nguy kịch), độ ẩm ($75\%$), nồng độ $NH_3$ ($25$ ppm) và chỉ số tổng hợp THI (các mốc 72, 78, 82). Khi ở trạng thái KHẨN CẤP, FSM kích hoạt đồng thời các kênh chấp hành Act1--Act3 để bật toàn bộ quạt hút và hệ thống phun sương; khi hạ về ngưỡng an toàn, FSM chỉ chuyển trạng thái sau khi giá trị đã nằm dưới ngưỡng một khoảng trễ nhất định, nhằm tránh hiện tượng rơ-le rung. Bảng \ref{Bảng 3.6} cụ thể hóa ma trận ngưỡng và hành động tương ứng của FSM.
+
+\begin{table}[H]
+\centering
+\caption{Ma trận ngưỡng và hành động của FSM điều khiển biên}
+\label{Bảng 3.6}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{p{2.6cm} p{6.2cm} p{5.5cm}}
+\hline
+\textbf{Trạng thái} & \textbf{Điều kiện kích hoạt} & \textbf{Hành động chấp hành} \\ \hline
+AN TOÀN & $T \le 32\,^\circ C$, $RH \le 70\%$, $NH_3 \le 20$ ppm & Tắt toàn bộ rơ-le \\ 
+CẢNH BÁO & $32 < T \le 35\,^\circ C$ hoặc THI $> 72$ hoặc $NH_3 > 20$ ppm & Bật quạt mức thấp (Act1) \\
+KHẨN CẤP & $T > 35\,^\circ C$ hoặc $NH_3 > 25$ ppm hoặc THI $> 78$ & Bật toàn bộ quạt + phun sương (Act1--Act3) \\ \hline
+\end{tabular}
+\end{table}
+
+\subsection{Áp dụng phương pháp đồng thiết kế Phần cứng/Phần mềm}
+Dựa trên các ràng buộc cụ thể về độ trễ và năng lượng, các chức năng hệ thống đã được đánh giá và phân hoạch tối ưu giữa phần cứng và phần mềm, với kết quả cuối cùng được tổng hợp tại Bảng \ref{Bảng 3.7}.
+
+\begin{table}[H]
+\centering
+\caption{Phân hoạch chức năng Phần cứng/Phần mềm cho Node}
+\label{Bảng 3.7}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{p{3.5cm} p{4.5cm} p{6.5cm}}
+\hline
+\textbf{Chức năng} & \textbf{Phân hoạch} & \textbf{Lý do} \\ \hline
+Mã hóa AES-128 & Phần cứng & Engine AES trong ESP32-S3 chạy nhanh, giảm chu kỳ CPU và năng lượng \\ 
+Mã hóa ASCON-128 & Phần mềm & Thuật toán hạng nhẹ, không có engine phần cứng; để so sánh đối chứng \\ 
+Lọc nhiễu, FSM & Phần mềm (Core 1) & Cần linh hoạt thay đổi ngưỡng/tham số; tải tính toán nhỏ \\ 
+Điều chế LoRa CSS & Phần cứng (SX1278) & Xử lý lớp vật lý chuyên dụng, MCU không kham nổi \\ 
+Cắt nguồn ngoại vi & Phần cứng (nguồn) & Quyết định không dùng load switch cho cảm biến khí MOX (cân bằng nhiệt) \\ 
+Gắn nhãn thời gian & Phần cứng (DS3231) & RTC cấp mốc thời gian chính xác\\ \hline
+\end{tabular}
+\end{table}
+
+% \begin{figure}[H]
+%     \centering
+%     \includegraphics[width=0.85\linewidth]{Thuc_Hanh/Image/HWSWCoDesign.png}
+%     \caption{Áp dụng chu trình đồng thiết kế HW/SW cho thiết bị Node}
+%     \label{fig:ch3_codesign}
+% \end{figure}
+
+Trong quá trình thiết kế, vòng lặp tái phân hoạch (Re-partitioning) đã được kích hoạt ở ít nhất hai điểm quan trọng. Thứ nhất, ban đầu thuật toán mã hóa dự kiến chạy hoàn toàn bằng thư viện phần mềm; tuy nhiên khi đo thử thời gian mã hóa AES bằng phần mềm thuần làm tăng đáng kể thời gian thức của Node, nhóm thiết kế đã quyết định đẩy AES-128 sang bộ tăng tốc mã hóa phần cứng tích hợp sẵn trong ESP32-S3, kéo thời gian mã hóa xuống mức dưới mili-giây -- đúng tinh thần "đẩy tác vụ nặng sang phần cứng" của chu trình co-design. Thứ hai, ở khâu quản lý năng lượng, phương án ban đầu theo lý thuyết là dùng công tắc tải (Load Switch) cắt nguồn toàn bộ cảm biến khi ngủ; nhưng phân tích đặc tính nhiệt động học của cảm biến khí MOX cho thấy việc cắt nguồn sẽ phá vỡ cân bằng nhiệt và gây trôi baseline nghiêm trọng, nên thiết kế đã tái phân hoạch theo hướng cấp nguồn liên tục cho mảng cảm biến khí và chỉ tối ưu phần ngủ sâu ở phía vi điều khiển. Hai ví dụ này cho thấy đồng thiết kế không phải là một quy trình tuyến tính một chiều, mà là một vòng lặp tinh chỉnh liên tục giữa hai miền phần cứng và phần mềm cho đến khi đạt điểm cân bằng tối ưu.
+\subsection{Thiết kế phân hệ cập nhật phần mềm không dây (OTA) trên nền tảng Edge Computing}
+
+\subsubsection{Bài toán giới hạn băng thông và cơ sở đề xuất kiến trúc Hybrid OTA}
+Trong mạng cảm biến không dây (WSN) ứng dụng cho nông nghiệp thông minh, giao thức LoRa được lựa chọn làm xương sống truyền thông nhờ khả năng đâm xuyên vật cản xuất sắc và tầm phủ sóng rộng với năng lượng tối thiểu. Tuy nhiên, theo định lý Shannon-Hartley về dung lượng kênh truyền, để đạt được độ nhạy thu (Receiver Sensitivity) cực thấp ở mức -137 dBm (với Spreading Factor SF = 12), hệ thống phải đánh đổi bằng tốc độ truyền dữ liệu (Data Rate) vô cùng nhỏ, thường chỉ dao động ở mức vài chục đến vài trăm bit/giây (bps). 
+
+Mặt khác, đối với nền tảng điện toán biên (Edge Computing) sử dụng vi điều khiển ESP32-S3, một tệp nhị phân Firmware hoàn chỉnh bao gồm hệ điều hành thời gian thực FreeRTOS, ngăn xếp giao thức mạng (Network Stack) và các thuật toán học máy bù trôi cảm biến thường có kích thước từ 1.2 MB đến 1.5 MB. Phép tính toán học cơ bản cho thấy, nếu truyền tải khối lượng dữ liệu này qua kênh LoRa với tốc độ thực tế 250 bps, thiết bị sẽ mất hơn 13 giờ truyền liên tục để hoàn tất. Điều này không chỉ vi phạm nghiêm ngặt quy định về chu kỳ hoạt động (Duty Cycle, thường giới hạn ở 1\%) của dải tần ISM, mà còn gây cạn kiệt dung lượng pin Lithium và làm sụp đổ toàn bộ mạng lưới do chiếm dụng kênh truyền.
+
+Từ những mâu thuẫn vật lý trên, đồ án đề xuất và thiết kế một kiến trúc cập nhật lai (Hybrid OTA Architecture). Phương pháp này phân tách rõ ràng luồng tín hiệu điều khiển (Control Plane) và luồng dữ liệu (Data Plane):
+\begin{itemize}
+    \item \textbf{Kênh Điều khiển (LoRa):} Hoạt động 100\% thời gian trong chu kỳ thức. Kênh này chỉ dùng để truyền các lệnh đánh thức (Wake-up triggers), tham số cấu hình và cờ hiệu báo cáo có bản cập nhật mới (OTA Flag).
+    \item \textbf{Kênh Dữ liệu (Wi-Fi 2.4 GHz):} Trạng thái mặc định là tắt hoàn toàn (RF Disabled) để tiết kiệm năng lượng. Kênh này chỉ được đánh thức khi có cờ hiệu OTA, thiết lập một kết nối tốc độ cao (lên tới 150 Mbps theo chuẩn 802.11n) vào mạng nội bộ để tải file nhị phân trong thời gian tính bằng giây, sau đó lập tức tự ngắt.
+\end{itemize}
+
+\subsubsection{Quy hoạch không gian bộ nhớ Flash (Memory Partitioning)}
+Để hệ thống có khả năng tiếp nhận phần mềm mới mà không làm gián đoạn mã lệnh đang thực thi, bộ nhớ Flash SPI ngoại vi (dung lượng 8 MB) của ESP32-S3 phải được quy hoạch theo kiến trúc Ngân hàng kép (Dual-Bank). Thay vì sử dụng một phân vùng ứng dụng nguyên khối, bộ nhớ được cắt lớp theo thiết kế chuẩn công nghiệp, minh họa tại Hình \ref{fig:memory_map}.
+
+\begin{figure}[H]
+\centering
+\resizebox{1.0\textwidth}{!}{
+\begin{tikzpicture}[
+    >=stealth, font=\small,
+    % Định nghĩa style các khối
+    block/.style={rectangle, draw, thick, minimum width=8cm, minimum height=0.9cm, align=center},
+    sys/.style={fill=gray!15},
+    app_active/.style={fill=blue!10, thick},
+    app_idle/.style={fill=white, dashed, thick},
+    data/.style={fill=yellow!10}
+]
+
+% Tọa độ tuyệt đối (Grid) theo trục dọc
+\node[block, sys] (boot) at (0, 0) {\textbf{Bootloader} \\ Offset: \texttt{0x0000} | Size: 32 KB};
+\node[block, sys] (part) at (0, -1.2) {\textbf{Partition Table} \\ Offset: \texttt{0x8000} | Size: 4 KB};
+\node[block, sys] (otadata) at (0, -2.4) {\textbf{OTA Data (Chứa cờ Boot)} \\ Offset: \texttt{0x9000} | Size: 8 KB};
+\node[block, data] (nvs) at (0, -3.6) {\textbf{NVS (Non-Volatile Storage)} \\ Offset: \texttt{0xB000} | Size: 20 KB};
+
+\node[block, app_active, minimum height=1.5cm] (app0) at (0, -5.3) {\textbf{Phân vùng Factory / APP0} \\ Trạng thái: Đang thực thi mã lệnh (Active) \\ Offset: \texttt{0x10000} | Size: 3 MB};
+
+\node[block, app_idle, minimum height=1.5cm] (app1) at (0, -7.3) {\textbf{Phân vùng OTA / APP1} \\ Trạng thái: Nhàn rỗi, chờ ghi dữ liệu (Idle) \\ Offset: \texttt{0x310000} | Size: 3 MB};
+
+% Trục địa chỉ bên trái
+\draw[->, thick] (-4.5, 0.5) -- (-4.5, -8.5) node[below] {Địa chỉ bộ nhớ};
+
+% Đường nối mô tả logic
+\draw[->, thick, red] (otadata.east) -- ++(1.5,0) |- node[pos=0.25, right] {Trỏ vào phân vùng Active} (app0.east);
+\end{tikzpicture}
+}
+\caption{Quy hoạch phân bổ bộ nhớ Flash phục vụ cơ chế cập nhật OTA (Dual-Bank)}
+\label{fig:memory_map}
+\end{figure}
+
+% Khối \texttt{OTA Data} đóng vai trò như một thanh ghi định tuyến. Khi thiết bị khởi động, Bootloader không nạp ngay hệ điều hành mà đọc giá trị tại \texttt{OTA Data} để xác định đâu là phân vùng chứa Firmware hợp lệ và mới nhất, sau đó mới ánh xạ (Map) vùng nhớ đó vào bộ đệm lệnh (Instruction Cache) của CPU.
+Như minh họa tại Hình \ref{fig:memory_map}, bộ nhớ Flash của ESP32-S3 được quy hoạch theo kiến trúc Ngân hàng kép (Dual-Bank) nhằm đảm bảo an toàn tuyệt đối cho tiến trình cập nhật OTA.
+
+Ở các dải địa chỉ thấp, Bootloader và Bảng phân vùng (Partition Table) làm nhiệm vụ khởi tạo phần cứng và định tuyến bộ nhớ. Phân vùng NVS (Non-Volatile Storage) được dùng để lưu trữ các thông số bất biến như cấu hình vô tuyến và trạng thái máy trạng thái hữu hạn (FSM).
+
+Thành phần cốt lõi điều phối quá trình OTA là phân vùng OTA Data (\texttt{0x9000}). Khởi động hệ thống, Bootloader bắt buộc phải đọc \texttt{OTA Data} để tìm vị trí firmware hợp lệ. Ở trạng thái mặc định (mũi tên đỏ), cờ Boot trỏ vào APP0 (Phân vùng Active), nơi vi điều khiển đang thực thi trực tiếp hệ điều hành FreeRTOS và các thuật toán đo lường biên.
+
+Để đảm bảo tính chống lỗi (Fail-safe), hệ thống sử dụng APP1 làm phân vùng dự phòng nhàn rỗi. Khi có bản cập nhật OTA, luồng dữ liệu mới sẽ được ghi vật lý vào \texttt{APP1}, cô lập hoàn toàn với \texttt{APP0} đang chạy. Chỉ khi tệp tải về hoàn chỉnh và vượt qua khâu xác thực mã băm SHA-256, \texttt{OTA Data} mới được ghi đè để trỏ hệ thống sang \texttt{APP1} ở lần khởi động tiếp theo. Cơ chế cô lập không gian này đảm bảo rằng: nếu sự cố rớt mạng hoặc sập nguồn xảy ra giữa chừng, phân vùng \texttt{APP0} không bị ảnh hưởng, thiết bị sẽ không bao giờ bị treo cứng mà vẫn duy trì vận hành an toàn trên phiên bản cũ.
+
+\subsubsection{Thiết kế luồng điều phối tác vụ Hệ điều hành (FreeRTOS Task Scheduling)}
+Trong môi trường hệ điều hành thời gian thực, tiến trình OTA không được phép gây ra hiện tượng khóa chết (Deadlock) hoặc cạnh tranh tài nguyên với các tác vụ sống còn khác. Bảng \ref{tab:rtos_tasks} trình bày ma trận phân bổ tác vụ, trong đó \texttt{Task\_OTA} được đặt ở mức ưu tiên thấp để đảm bảo an toàn hệ thống.
+
+\begin{table}[H]
+  \centering
+  \caption{Quy hoạch và phân bổ các tác vụ FreeRTOS trong hệ thống Edge Node}
+  \label{tab:rtos_tasks}
+  \begin{tabular}{@{}p{3.5cm} c c c p{4.5cm}@{}}
+      \toprule
+      \textbf{Tên tác vụ} & \textbf{Lõi CPU} & \textbf{Mức Ưu tiên} & \textbf{Stack Size} & \textbf{Chức năng cốt lõi} \\
+      \midrule
+      \texttt{Task\_FSM\_Sensors} & Core 1 & 3 (Cao) & 4096 B & Thu thập dữ liệu, thuật toán bù trôi điện toán biên. \\
+      \midrule
+      \texttt{Task\_LoRa\_Comm} & Core 1 & 4 (Rất cao) & 4096 B & Xử lý ngắt vô tuyến, truyền/nhận Uplink, Downlink. \\
+      \midrule
+      \texttt{Task\_OTA\_Worker} & Core 0 & 1 (Thấp) & 8192 B & Thiết lập Wi-Fi, tải khối HTTP, mã hóa SHA-256. Ngủ đông khi không có lệnh. \\
+      \bottomrule
+  \end{tabular}
+\end{table}
+
+Khi \texttt{Task\_LoRa\_Comm} nhận được cờ lệnh OTA, nó sẽ phát một tín hiệu Semaphore nhị phân để đánh thức \texttt{Task\_OTA\_Worker}. Lúc này, \texttt{Task\_OTA\_Worker} sẽ gọi hàm API nội bộ để tạm đình chỉ (Suspend) \texttt{Task\_FSM\_Sensors}, giải phóng bộ nhớ Heap để cấp phát cho bộ đệm nhận gói tin TCP/IP, đảm bảo quá trình ghi Flash diễn ra liền mạch không bị phân mảnh.
+
+\subsection{Kết luận chương}
+Chương 3 đã thực hiện trọn vẹn quá trình phân tích và thiết kế hệ thống theo hướng từ trên xuống. Bắt đầu từ việc lượng hóa các yêu cầu chức năng và phi chức năng thành những tham số cụ thể, chương đã biện luận lựa chọn từng khối công nghệ lõi -- từ vi điều khiển ESP32-S3, module vô tuyến LoRa SX1278, khối nguồn tiết kiệm điện, tổ hợp cảm biến vi khí hậu và khí độc, cho đến khối thời gian thực và khối chấp hành -- với đầy đủ lý do kỹ thuật cho mỗi quyết định. Chương đã thiết kế kiến trúc phần mềm đa nhiệm trên FreeRTOS với cơ chế gán nhân tách biệt vô tuyến khỏi điện toán biên, đồng thời chi tiết hóa các thuật toán cốt lõi gồm chu trình lấy mẫu, lọc nhiễu theo từng tín hiệu và máy trạng thái ra quyết định. Cuối cùng, phương pháp đồng thiết kế Phần cứng/Phần mềm đã được áp dụng cụ thể để phân hoạch chức năng một cách tối ưu. 
+
+
+
+

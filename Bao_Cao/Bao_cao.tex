@@ -1,0 +1,177 @@
+\documentclass{article} % Tạo một bản báo cáo
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{cases} 
+\usepackage[utf8]{inputenc}
+\usepackage[T5]{fontenc} % Để sử dụng Tiếng Việt
+\usepackage[fontsize=13pt]{scrextend} % Set fontsize=13pt
+\usepackage{amssymb}
+%\usepackage[paperheight=29.7cm,paperwidth=21cm,right=2cm,left=3cm,top=2cm,bottom=2.5cm]{geometry}% Chuẩn A4, căn lề phải, trái, trên, dưới.
+\usepackage{subfig} %jjj%
+\usepackage[paperheight=29.7cm,paperwidth=21cm,right=2cm,left=3cm,top=2cm,bottom=2.5cm,twoside]{geometry}% Chuẩn A4, căn lề phải, trái, trên, dưới.
+\usepackage{mathptmx} % Time New Roman
+\usepackage{graphicx} % Thư viện chèn ảnh
+\usepackage{pdfpages}
+\usepackage{booktabs,siunitx}
+\usepackage{footnote}
+\usepackage{tablefootnote}
+\usepackage[flushleft]{threeparttable}
+\usepackage[algo2e]{algorithm2e} 
+\usepackage{cite}
+\usepackage{listings}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{longtable}
+\usepackage{flushend}
+\usepackage{dblfloatfix}
+\usepackage{lipsum}
+\usepackage{algorithm}
+\usepackage{float}
+\usepackage{multirow}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{url}
+\usepackage{longtable}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, calc}
+\usepackage{booktabs}
+
+\usepackage{float} % Set vị trí chèn ảnh
+\usepackage{tikz} % Thư viện tạo khung bìa
+\usetikzlibrary{calc} % Thư viện tikz
+% --- Bổ sung phần RTOS ---
+% Các thư viện TikZ phục vụ vẽ sơ đồ vòng đời Task, kiến trúc đa nhiệm, cơ chế Mutex
+\usetikzlibrary{positioning,arrows.meta,shapes.geometric,shapes.misc,fit,backgrounds,chains,calc}
+% pgfplots phục vụ vẽ biểu đồ tải CPU và năng lượng (Chương 5)
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.16}
+\usepgfplotslibrary{groupplots}
+% --- Hết bổ sung phần RTOS ---
+\usepackage{indentfirst} % Thư viện thụt đầu dòng
+\renewcommand{\baselinestretch}{1.2} % Giãn dòng 1.2
+\setlength{\parskip}{6pt} % Spacing after
+\setlength{\parindent}{1cm} % Set khoảng cách thụt đầu dòng mỗi đoạn
+\usepackage{titlesec} % Thư viện để set up các kiểu chữ
+\setcounter{secnumdepth}{4} % 4 Heading
+\titlespacing*{\section}{0pt}{0pt}{30pt} % Heading 1
+\titleformat*{\section}{\fontsize{16pt}{0pt}\selectfont \bfseries \centering}
+
+\titlespacing*{\subsection}{0pt}{10pt}{0pt} % Heading 2
+\titleformat*{\subsection}{\fontsize{14pt}{0pt}\selectfont \bfseries}
+
+\titlespacing*{\subsubsection}{0pt}{10pt}{0pt} % Heading 3
+\titleformat*{\subsubsection}{\fontsize{13pt}{0pt}\selectfont \bfseries \itshape}
+
+\titlespacing*{\paragraph}{0pt}{10pt}{0pt} % Heading 4
+\titleformat*{\paragraph}{\fontsize{13pt}{0pt}\selectfont \itshape}
+
+
+\renewcommand{\figurename}{\fontsize{12pt}{0pt}\selectfont \bfseries Hình}
+\renewcommand{\thefigure}{\thesection.\arabic{figure}}
+\usepackage[font=bf]{caption}
+\captionsetup[figure]{labelsep=space}
+
+\renewcommand{\tablename}{\fontsize{12pt}{0pt}\selectfont \bfseries Bảng}
+\renewcommand{\thetable}{\thesection.\arabic{table}}
+\captionsetup[table]{labelsep=space}
+
+\usepackage{tabularx}
+\newcolumntype{s}{>{\hsize=.3\hsize}X}
+\newcolumntype{y}{>{\hsize=.4\hsize}X}
+\newcolumntype{d}{>{\hsize=.1\hsize}X}
+\newcolumntype{a}{>{\hsize=1.1\hsize}X}
+\newcolumntype{g}{>{\hsize=5\hsize}X}
+\renewcommand{\tabularxcolumn}[1]{>{\small}m{#1}}
+
+\renewcommand{\theequation}{\thesection.\arabic{equation}} % Thay đổi đánh số phương trình mặc định
+\newtheorem{theorem}{Định lý}[section]
+\newtheorem{defn}[theorem]{Định nghĩa}
+\newtheorem{corollary}[theorem]{Hệ quả}
+\newtheorem{lemma}[theorem]{Bổ đề}
+
+\usepackage{lipsum} % Thư viện tạo chữ linh tinh.
+\renewcommand{\contentsname}{MỤC LỤC}
+\renewcommand{\listfigurename}{DANH MỤC HÌNH VẼ}
+\renewcommand{\listtablename}{DANH MỤC BẢNG BIỂU}
+\renewcommand{\refname}{TÀI LIỆU THAM KHẢO}
+
+\usepackage[unicode]{hyperref}
+
+% ==== Sửa lỗi hiển thị bookmark/mục lục PDF (chỉ chỉnh phần setup) ====
+% Nguyên nhân: mỗi trang CHƯƠNG dùng \section* rồi \addcontentsline nhưng THIẾU
+% \phantomsection nên không tạo được "mỏ neo" (anchor) riêng. Hyperref vì thế tính
+% sai cấp bậc và lồng nhầm các chương vào mục đứng trước (ví dụ ABSTRACT).
+% Cách sửa, không đụng tới nội dung các chương:
+%   1) Nạp gói bookmark (sau hyperref) để dựng lại cây bookmark theo đúng cấp.
+%   2) Tự chèn \phantomsection cho MỌI mục cấp "section" được ghi ra mục lục, giúp
+%      mỗi chương có mỏ neo riêng -> hiển thị tách bạch, đúng liên kết, và các mục
+%      con (\subsection, \subsubsection) tự động lồng vào đúng chương của nó.
+\usepackage{bookmark}
+\makeatletter
+\let\hyfix@addcontentsline\addcontentsline
+\renewcommand{\addcontentsline}[3]{%
+  \def\hyfix@type{#2}\def\hyfix@sec{section}%
+  \ifx\hyfix@type\hyfix@sec \phantomsection \fi
+  \hyfix@addcontentsline{#1}{#2}{#3}%
+}
+\makeatother
+% ==== Hết phần sửa ====
+
+\usepackage{colortbl}
+\definecolor{LightCyan}{rgb}{0.88,1,1}
+\usepackage{forloop}
+\newcounter{loopcntr}
+\newcommand{\rpt}[2][1]{\forloop{loopcntr}{0}{\value{loopcntr}<#1}{#2}}
+
+\begin{document}
+\input{Thuc_Hanh/Bia}
+\input{Thuc_Hanh/Danhgia}
+\input{Thuc_Hanh/LoiNoiDau}
+\input{Thuc_Hanh/LoiCamDoan}
+
+\addtocontents{toc}{\protect\thispagestyle{empty}}
+\tableofcontents %tạo mục lục tự động
+\thispagestyle{empty}
+\cleardoublepage
+\pagenumbering{roman} %đánh số thứ tự la mã
+
+
+\input{Thuc_Hanh/Danhsachtuviettat}
+{\let\oldnumberline\numberline
+\renewcommand{\numberline}{\figurename~\oldnumberline}
+\listoffigures} %tạo mục hình vẽ tự động
+\phantomsection \addcontentsline{toc}{section}{\numberline {} DANH MỤC HÌNH VẼ}
+\cleardoublepage
+
+{\let\oldnumberline\numberline
+\renewcommand{\numberline}{\tablename~\oldnumberline}
+\listoftables}
+\phantomsection \addcontentsline{toc}{section}{\numberline {} DANH MỤC BẢNG BIỂU}
+\cleardoublepage
+\input{Thuc_Hanh/Tomtat}
+\pagenumbering{arabic} % đánh số 1,2,3...
+
+\newpage
+\input{Thuc_Hanh/Chuong1}
+\newpage
+\input{Thuc_Hanh/Chuong2}
+\newpage
+\input{Thuc_Hanh/Chuong3}
+\newpage
+\input{Thuc_Hanh/Chuong4}
+\newpage
+%\newpage
+\input{Thuc_Hanh/Chuong5}
+\newpage
+\input{Thuc_Hanh/Chuong6}
+%\newpage
+%\input{Thuc_Hanh/tailieuthamkhao}
+
+\newpage
+\addcontentsline{toc}{section}{\numberline{} TÀI LIỆU THAM KHẢO}
+\bibliographystyle{ieeetr}
+\bibliography{Thuc_Hanh/ref}
+\end{document}

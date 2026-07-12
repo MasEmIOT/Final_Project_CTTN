@@ -1,0 +1,268 @@
+% \thispagestyle{empty}
+% \begin{figure}[H]
+%     \begin{center}
+%         \includegraphics[width=1.05\linewidth]{Thuc_Hanh/Danhgia/DanhGia-part-1.pdf}
+%      \end{center}
+%  \end{figure}
+%  \newpage
+% \thispagestyle{empty}
+% \begin{figure}[H]
+%     \begin{center}
+%         \includegraphics[width=1.05\linewidth]{Thuc_Hanh/Danhgia/DanhGia-part-3.pdf}
+%      \end{center}
+%  \end{figure}
+% \newpage
+% \thispagestyle{empty}
+% \begin{figure}[H]
+%     \begin{center}
+%         \includegraphics[width=1.05\linewidth]{Thuc_Hanh/Danhgia/DanhGia-part-5.pdf}
+%      \end{center}
+%  \end{figure}
+% \cleardoublepage
+
+% \includepdf[pages=-]{Thuc_Hanh/Danhgia/DanhGia.pdf}
+
+% ===================================================
+%  MACRO: in một phiếu đánh giá CBHD (dùng lại 2 lần)
+% ===================================================
+\newcommand{\phieuCBHD}{%
+  \begingroup
+  \newgeometry{top=1.4cm,bottom=1.4cm,left=1.8cm,right=1.5cm}
+  \thispagestyle{empty}
+  \setlength{\parindent}{0pt}
+  \setlength{\parskip}{2pt}
+  \renewcommand{\baselinestretch}{1.1}\selectfont
+
+  % ---------- Tiêu đề ----------
+  \begin{center}
+    {\fontsize{12pt}{14pt}\selectfont ĐẠI HỌC BÁCH KHOA HÀ NỘI}\\[1pt]
+    {\fontsize{12pt}{14pt}\selectfont\bfseries\underline{TRƯỜNG ĐIỆN -- ĐIỆN TỬ}}\\[7pt]
+    {\fontsize{13pt}{15pt}\selectfont\bfseries ĐÁNH GIÁ ĐỒ ÁN TỐT NGHIỆP}\\[1pt]
+    {\fontsize{12pt}{14pt}\selectfont\bfseries (DÀNH CHO CÁN BỘ HƯỚNG DẪN)}
+  \end{center}
+
+% ---------- Thông tin chung ----------
+\vspace{-10pt}
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.14}
+\begin{tabular}{p{3.4cm} p{13.5cm}}
+Tên đề tài: & {\bfseries  Nghiên cứu thiết kế và chế tạo hệ thống IoT giám sát vi khí hậu chuồng nuôi gia cầm ứng dụng LoRa và Điện toán biên} \\
+Họ tên SV: & {\bfseries Nguyễn Tiến Đạt} \hfill MSSV: {\bfseries 20223689} \\
+Cán bộ hướng dẫn: & {\bfseries PGS.TS. Trần Quang Vinh} \\
+\end{tabular}
+\end{table}
+\vspace{-6pt}
+%----------------------------------------
+
+  \footnotesize
+  \renewcommand{\arraystretch}{1.18}
+  \setlength{\tabcolsep}{4pt}
+
+  \noindent
+  \begin{tabular}{|>{\centering\arraybackslash\bfseries}m{0.62cm}%
+                  |>{\centering\arraybackslash}m{2.05cm}%
+                  |m{12.55cm}%
+                  |>{\centering\arraybackslash}m{1.3cm}|}
+  \hline
+  \textbf{STT} & \textbf{Tiêu chí (Điểm tối đa)} & \centering\arraybackslash\textbf{Hướng dẫn đánh giá tiêu chí} & \textbf{Điểm tiêu chí} \\
+  \hline
+
+  1 &
+  \textbf{Thái độ làm việc} \newline\textbf{(2,5 điểm)} &
+  Nghiêm túc, tích cực và chủ động trong quá trình làm ĐATN.
+
+  Hoàn thành đầy đủ và đúng tiến độ các nội dung được GVHD giao.
+  & 2,5\\
+  \hline
+
+  2 &
+  \textbf{Kỹ năng viết quyển ĐATN} \newline\textbf{(2 điểm)} &
+  Trình bày đúng mẫu quy định, bố cục các chương logic và hợp lý: Bảng biểu, hình
+  ảnh rõ ràng, có tiêu đề, được đánh số thứ tự và được giải thích hay để cập đến
+  trong đồ án, có căn lề, dấu cách sau dấu chấm, dấu phẩy, có mở đầu chương và
+  kết luận chương, có liệt kê tài liệu tham khảo và có trích dẫn, v.v.
+
+  Kỹ năng diễn đạt, phân tích, giải thích, lập luận: Cấu trúc câu rõ ràng, văn
+  phong khoa học, lập luận logic và có cơ sở, thuật ngữ chuyên ngành phù hợp, v.v.
+  & 2\\
+  \hline
+
+  3 &
+  \textbf{Nội dung và kết quả đạt được} \newline\textbf{(5 điểm)} &
+  Nêu rõ tính cấp thiết, ý nghĩa khoa học và thực tiễn của đề tài, các vấn đề và
+  các giả thuyết, phạm vi ứng dụng của đề tài. Thực hiện đầy đủ quy trình nghiên
+  cứu: Đặt vấn đề, mục tiêu đề ra, phương pháp nghiên cứu/ giải quyết vấn đề, kết
+  quả đạt được, đánh giá và kết luận.
+
+  Nội dung và kết quả được trình bày một cách logic và hợp lý, được phân tích và
+  đánh giá thỏa đáng. Biện luận phân tích kết quả mô phỏng/ phần mềm/ thực
+  nghiệm, so sánh kết quả đạt được với kết quả trước đó có liên quan.
+
+  Chỉ rõ phù hợp giữa kết quả đạt được và mục tiêu ban đầu đề ra đồng thời cung
+  cấp lập luận để đề xuất hướng giải quyết có thể thực hiện trong tương lai. Hàm
+  lượng khoa học/ độ phức tạp cao, có tính mới/tính sáng tạo trong nội dung và
+  kết quả của đồ án.
+  & 5\\
+  \hline
+
+  4 &
+  \textbf{Điểm thành tích} \newline\textbf{(1 điểm)} &
+  Có bài báo KH được đăng hoặc chấp nhận đăng/ đạt giải SV NCKH giải 3 cấp
+  Trường trở lên/ Các giải thưởng khoa học trong nước, quốc tế từ giải 3 trở lên/
+  Có đăng ký bằng phát minh sáng chế. \textbf{(1 điểm)}
+
+  Được báo cáo tại hội đồng cấp Trường trong hội nghị SV NCKH nhưng không đạt
+  giải từ giải 3 trở lên/ Đạt giải khuyến khích trong cuộc thi khoa học trong nước,
+  quốc tế/ Kết quả đồ án là sản phẩm ứng dụng có tính hoàn thiện cao, yêu cầu
+  khối lượng thực hiện lớn. \textbf{(0,5 điểm)}
+  & 0\\
+  \hline
+
+  \multicolumn{3}{|r|}{\textbf{Điểm tổng các tiêu chí:}} & 9,5\\
+  \hline
+  \multicolumn{3}{|r|}{\textbf{Điểm hướng dẫn:}} & 9,5\\
+  \hline
+  \end{tabular}
+
+  % ---------- Chữ ký ----------
+  %\vspace{6pt}
+  \begin{flushright}
+    \fontsize{12pt}{20pt}\selectfont\textit{Cán bộ hướng dẫn}\\[22pt]
+    \fontsize{12pt}{24pt}\selectfont\textbf{PGS.TS. Trần Quang Vinh}
+  \end{flushright}
+
+  \noindent{\fontsize{9.5pt}{11pt}\selectfont\textit{%
+    Điểm từng tiêu chí cho lẻ đến 0,5.
+    Nếu Điểm tổng các tiêu chí $>$ 10 thì Điểm hướng dẫn làm tròn thành 10.}}
+
+  \restoregeometry
+  \renewcommand{\baselinestretch}{1.2}\selectfont
+  \setlength{\parskip}{6pt}
+  \setlength{\parindent}{1cm}
+  \endgroup
+}% end \phieuCBHD
+
+% ===================================================
+%  MACRO: phiếu đánh giá CBPB (dùng lại 2 lần)
+% ===================================================
+\newcommand{\phieuCBPB}{%
+  \begingroup
+  \newgeometry{top=1.4cm,bottom=1.4cm,left=1.8cm,right=1.5cm}
+  \thispagestyle{empty}
+  \setlength{\parindent}{0pt}
+  \setlength{\parskip}{2pt}
+  \renewcommand{\baselinestretch}{1.1}\selectfont
+
+  % ---------- Tiêu đề ----------
+  \begin{center}
+    {\fontsize{12pt}{14pt}\selectfont ĐẠI HỌC BÁCH KHOA HÀ NỘI}\\[1pt]
+    {\fontsize{12pt}{14pt}\selectfont\bfseries\underline{TRƯỜNG ĐIỆN -- ĐIỆN TỬ}}\\[7pt]
+    {\fontsize{13pt}{15pt}\selectfont\bfseries ĐÁNH GIÁ ĐỒ ÁN TỐT NGHIỆP}\\[1pt]
+    {\fontsize{12pt}{14pt}\selectfont\bfseries (DÀNH CHO CÁN BỘ PHẢN BIỆN)}
+  \end{center}
+
+ % ---------- Thông tin chung ----------
+\vspace{-10pt}
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.14}
+\begin{tabular}{p{3.4cm} p{13.5cm}}
+Tên đề tài: & {\bfseries  Nghiên cứu thiết kế và chế tạo hệ thống IoT giám sát vi khí hậu chuồng nuôi gia cầm ứng dụng LoRa và Điện toán biên} \\
+Họ tên SV: & {\bfseries Nguyễn Tiến Đạt} \hfill MSSV: {\bfseries 20223689} \\
+Cán bộ phản biện: & ................................................................................................................ \\
+\end{tabular}
+\end{table}
+\vspace{-6pt}
+%----------------------------------------
+
+  % ---------- Bảng đánh giá ----------
+  \footnotesize
+  \renewcommand{\arraystretch}{1.18}
+  \setlength{\tabcolsep}{4pt}
+
+  \noindent
+  \begin{tabular}{|>{\centering\arraybackslash\bfseries}m{0.62cm}%
+                  |>{\centering\arraybackslash}m{2.05cm}%
+                  |m{12.55cm}%
+                  |>{\centering\arraybackslash}m{1.3cm}|}
+  \hline
+  \textbf{STT} & \textbf{Tiêu chí (Điểm tối đa)} & \centering\arraybackslash\textbf{Hướng dẫn đánh giá tiêu chí} & \textbf{Điểm tiêu chí} \\
+  \hline
+
+  1 &
+  \textbf{Trình bày quyển ĐATN} \newline\textbf{(4 điểm)} &
+  Trình bày đúng mẫu quy định, bố cục các chương logic và hợp lý: Bảng biểu, hình
+  ảnh rõ ràng, có tiêu đề, được đánh số thứ tự và được giải thích hay để cập đến
+  trong đồ án, có căn lề, dấu cách sau dấu chấm, dấu phẩy, có mở đầu chương và
+  kết luận chương, có liệt kê tài liệu tham khảo và có trích dẫn, v.v.
+
+  Kỹ năng diễn đạt, phân tích, giải thích, lập luận: Cấu trúc câu rõ ràng, văn
+  phong khoa học, lập luận logic và có cơ sở, thuật ngữ chuyên ngành phù hợp, v.v.
+  & \\
+  \hline
+
+  2 &
+  \textbf{Nội dung và kết quả đạt được} \newline\textbf{(5,5 điểm)} &
+  Nêu rõ tính cấp thiết, ý nghĩa khoa học và thực tiễn của đề tài, các vấn đề và
+  các giả thuyết, phạm vi ứng dụng của đề tài. Thực hiện đầy đủ quy trình nghiên
+  cứu: Đặt vấn đề, mục tiêu đề ra, phương pháp nghiên cứu/ giải quyết vấn đề, kết
+  quả đạt được, đánh giá và kết luận.
+
+  Nội dung và kết quả được trình bày một cách logic và hợp lý, được phân tích và
+  đánh giá thỏa đáng. Biện luận phân tích kết quả mô phỏng/ phần mềm/ thực
+  nghiệm, so sánh kết quả đạt được với kết quả trước đó có liên quan.
+
+  Chỉ rõ phù hợp giữa kết quả đạt được và mục tiêu ban đầu đề ra đồng thời cung
+  cấp lập luận để đề xuất hướng giải quyết có thể thực hiện trong tương lai. Hàm
+  lượng khoa học/ độ phức tạp cao, có tính mới/tính sáng tạo trong nội dung và
+  kết quả của đồ án.
+  & \\
+  \hline
+
+  3 &
+  \textbf{Điểm thành tích} \newline\textbf{(1 điểm)} &
+  Có bài báo KH được đăng hoặc chấp nhận đăng/ đạt giải SV NCKH giải 3 cấp
+  Trường trở lên/ Các giải thưởng KH quốc tế/ trong nước từ giải 3 trở lên/
+  Có đăng ký bằng phát minh sáng chế. \textbf{(1 điểm)}
+
+  Được báo cáo tại hội đồng cấp Trường trong hội nghị SV NCKH nhưng không đạt
+  giải từ giải 3 trở lên/ Đạt giải khuyến khích trong các kỳ thi quốc gia và
+  quốc tế khác về chuyên ngành. \textbf{(0,5 điểm)}
+  & \\
+  \hline
+
+  \multicolumn{3}{|r|}{\textbf{Điểm tổng các tiêu chí:}} & \\
+  \hline
+  \multicolumn{3}{|r|}{\textbf{Điểm phản biện:}} & \\
+  \hline
+  \end{tabular}
+
+  % ---------- Chữ ký ----------
+  \vspace{8pt}
+  \begin{flushright}
+    \fontsize{12pt}{14pt}\selectfont\textit{Cán bộ phản biện}\\[2pt]
+    \fontsize{11pt}{13pt}\selectfont\textit{(Ký và ghi rõ họ tên)}\\[24pt]
+    \phantom{PGS.TS. Trần Quang Vinh}
+  \end{flushright}
+
+  \vspace{4pt}
+  \noindent{\fontsize{9.5pt}{11pt}\selectfont\textit{%
+    Điểm từng tiêu chí cho lẻ đến 0,5.
+    Nếu Điểm tổng các tiêu chí $>$ 10 thì Điểm hướng dẫn làm tròn thành 10.}}
+
+  \restoregeometry
+  \renewcommand{\baselinestretch}{1.2}\selectfont
+  \setlength{\parskip}{6pt}
+  \setlength{\parindent}{1cm}
+  \endgroup
+}% end \phieuCBPB
+
+% ===================================================
+%  In hai bản phiếu CBHD + hai bản phiếu CBPB
+% ===================================================
+\phieuCBHD
+\cleardoublepage
+
+\phieuCBPB
+\cleardoublepage

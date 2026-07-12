@@ -1,0 +1,81 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>EdgeProfiler Report</title>
+<style>
+:root{--bg:#0f1419;--card:#1b212b;--ink:#e6e6e6;--mut:#8aa;--ok:#26c281;--bad:#ff5c5c;--acc:#4fc3f7;}
+*{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--ink);padding:24px}
+h1{margin:0 0 4px}.sub{color:var(--mut);margin-bottom:18px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:16px}
+.card{background:var(--card);border:1px solid #2a3340;border-radius:12px;padding:16px}
+.card h2{margin:0 0 12px;font-size:13px;letter-spacing:.5px;color:var(--acc);text-transform:uppercase}
+table{width:100%;border-collapse:collapse}td,th{padding:7px 6px;border-bottom:1px solid #2a3340;text-align:left;font-size:13px}
+th{color:var(--mut)}.big{font-size:28px;font-weight:700}.mut{color:var(--mut)}
+.pill{padding:3px 10px;border-radius:999px;font-weight:700;font-size:12px}
+.pass{background:rgba(38,194,129,.15);color:var(--ok)}.fail{background:rgba(255,92,92,.15);color:var(--bad)}
+.ok{color:var(--ok)}.bad{color:var(--bad)}
+</style></head><body>
+<h1>EdgeProfiler &mdash; HIL Multi-Node Report</h1>
+<div class="sub">ESP32-S3 LoRa Edge System &nbsp;|&nbsp; v2.0 &nbsp;|&nbsp; ports: COM9, COM11</div>
+<div class="kpis">
+ <div class="card"><div class="mut">Tests Passed</div><div class="big ok">14/14</div></div>
+ <div class="card"><div class="mut">Tests Failed</div><div class="big ok">0</div></div>
+ <div class="card"><div class="mut">Anomaly Detection</div><div class="big">100.0%</div></div>
+ <div class="card"><div class="mut">Nodes Seen</div><div class="big">1</div></div>
+ <div class="card"><div class="mut">Duration</div><div class="big">0:43:00</div></div>
+</div>
+<div class="card"><h2>Session</h2><table>
+ <tr><th>Start</th><td>2026-06-13 22:58:59</td><th>End</th><td>2026-06-13 23:42:00</td></tr>
+ <tr><th>Gateway heap start</th><td>246,032 B</td>
+     <th>Gateway heap end</th><td>245,388 B</td></tr>
+</table></div>
+<div class="card" style="margin-top:16px"><h2>Test Pass/Fail Matrix</h2><table>
+ <tr><th>#</th><th>Test</th><th>Result</th><th>Detail</th><th>Time</th></tr>
+ <tr><td>1</td><td>HW Fault: I2C Lockup (SHT30)</td>
+ <td><span class="pill pass">PASS</span></td>
+ <td class="mut">fsm=WARN alert=1</td><td class="mut">2026-06-13T23:38:15</td></tr><tr><td>2</td><td>HW Fault: I2C Lockup (SHT30)</td>
+ <td><span class="pill pass">PASS</span></td>
+ <td class="mut">fsm=WARN alert=1</td><td class="mut">2026-06-13T23:40:54</td></tr><tr><td>3</td><td>SW Fault: LoRa Jamming</td>
+ <td><span class="pill pass">PASS</span></td>
+ <td class="mut">pdr=20 rssi=-106</td><td class="mut">2026-06-13T23:41:04</td></tr><tr><td>4</td><td>SW Fault: LoRa Jamming</td>
+ <td><span class="pill pass">PASS</span></td>
+ <td class="mut">pdr=20 rssi=-105</td><td class="mut">2026-06-13T23:41:09</td></tr><tr><td>5</td><td>Resilience: Gateway Offline</td>
+ <td><span class="pill pass">PASS</span></td>
+ <td class="mut">telemetry continuous (no outage induced)</td><td class="mut">2026-06-13T23:41:27</td></tr><tr><td>6</td><td>Bandwidth Check (pkt/h)</td>
+ <td><span class="pill pass">PASS</span></td>
+ <td class="mut">throughput ~1036 pkt/h</td><td class="mut">2026-06-13T23:41:29</td></tr><tr><td>7</td><td>Bandwidth Check (pkt/h)</td>
+ <td><span class="pill pass">PASS</span></td>
+ <td class="mut">throughput ~996 pkt/h</td><td class="mut">2026-06-13T23:41:31</td></tr><tr><td>8</td><td>Bandwidth Check (pkt/h)</td>
+ <td><span class="pill pass">PASS</span></td>
+ <td class="mut">throughput ~1573 pkt/h</td><td class="mut">2026-06-13T23:41:34</td></tr><tr><td>9</td><td>Bandwidth Check (pkt/h)</td>
+ <td><span class="pill pass">PASS</span></td>
+ <td class="mut">throughput ~1573 pkt/h</td><td class="mut">2026-06-13T23:41:34</td></tr><tr><td>10</td><td>Bandwidth Check (pkt/h)</td>
+ <td><span class="pill pass">PASS</span></td>
+ <td class="mut">throughput ~1573 pkt/h</td><td class="mut">2026-06-13T23:41:35</td></tr><tr><td>11</td><td>Bandwidth Check (pkt/h)</td>
+ <td><span class="pill pass">PASS</span></td>
+ <td class="mut">throughput ~1492 pkt/h</td><td class="mut">2026-06-13T23:41:37</td></tr><tr><td>12</td><td>Encryption Verify (AES/ASCON)</td>
+ <td><span class="pill pass">PASS</span></td>
+ <td class="mut">algo=AES-128-GCM (frames authenticate & decode)</td><td class="mut">2026-06-13T23:41:44</td></tr><tr><td>13</td><td>Encryption Verify (AES/ASCON)</td>
+ <td><span class="pill pass">PASS</span></td>
+ <td class="mut">algo=AES-128-GCM (frames authenticate & decode)</td><td class="mut">2026-06-13T23:41:45</td></tr><tr><td>14</td><td>Encryption Verify (AES/ASCON)</td>
+ <td><span class="pill pass">PASS</span></td>
+ <td class="mut">algo=AES-128-GCM (frames authenticate & decode)</td><td class="mut">2026-06-13T23:41:46</td></tr>
+ 
+</table></div>
+
+<div class="card" style="margin-top:16px"><h2>Node 1 &mdash; AES-128-GCM &mdash; FSM SAFE</h2>
+<table><tr><th>Metric</th><th>Min</th><th>Max</th><th>Avg</th></tr>
+ <tr><td>Temperature (°C)</td><td>27.4</td><td>27.8</td><td>27.54</td></tr>
+ <tr><td>Humidity (%)</td><td>50.6</td><td>53.1</td><td>51.72</td></tr>
+ <tr><td>Light (lux)</td><td>22.0</td><td>31.0</td><td>28.77</td></tr>
+ <tr><td>Pressure (hPa)</td><td>999.5</td><td>999.6</td><td>999.53</td></tr>
+ <tr><td>RSSI (dBm)</td><td>-106.0</td><td>-64.0</td><td>-66.23</td></tr>
+ <tr><td>SNR (dB)</td><td>0.0</td><td>14.5</td><td>10.82</td></tr>
+ <tr><td>Response RTT (ms)</td><td>0.0</td><td>585.0</td><td>578.34</td></tr>
+ <tr><td>Distance (m)</td><td>0.0</td><td>14.1</td><td>11.93</td></tr>
+ <tr><td>PDR (%)</td><td>20.0</td><td>100.0</td><td>99.59</td></tr>
+ <tr><td>Bandwidth (pkt/h)</td><td>0.0</td><td>2070.0</td><td>1067.02</td></tr>
+ <tr><td>Processing (µs)</td><td>53457.0</td><td>53980.0</td><td>53930.6</td></tr>
+ <tr><td>Encryption (µs)</td><td>0.0</td><td>1193.0</td><td>854.65</td></tr>
+</table></div>
+
+<p class="sub" style="margin-top:18px">Generated by EdgeProfiler v2.0 — Automated HIL Testing &amp; Monitoring.</p>
+</body></html>

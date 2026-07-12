@@ -1,0 +1,357 @@
+\section*{CHƯƠNG 6. KẾT LUẬN VÀ HƯỚNG PHÁT TRIỂN}
+\addcontentsline{toc}{section}{\numberline {} CHƯƠNG 6. KẾT LUẬN VÀ HƯỚNG PHÁT TRIỂN}
+\setcounter{section}{6}
+\setcounter{subsection}{0}
+\setcounter{figure}{0}
+\setcounter{table}{0}
+
+\subsection{Tóm tắt kết quả chính của đồ án}
+
+Đề tài được thực hiện với mục tiêu nghiên cứu, thiết kế và chế tạo một hệ thống IoT giám sát vi khí hậu chuồng nuôi gia cầm ứng dụng công nghệ truyền thông LoRa kết hợp Điện toán biên (Edge Computing), nhằm xây dựng một giải pháp có khả năng hoạt động ổn định trong điều kiện thực tế, đáp ứng yêu cầu về xử lý thời gian thực, tiết kiệm năng lượng, bảo mật dữ liệu và khả năng mở rộng trong các mô hình chăn nuôi thông minh.
+
+Trong quá trình thực hiện, đồ án đã tiến hành khảo sát cơ sở lý thuyết liên quan đến mạng cảm biến không dây, kiến trúc IoT phân tán, công nghệ truyền thông LoRa, hệ điều hành thời gian thực FreeRTOS, kỹ thuật Điện toán biên, các thuật toán lọc tín hiệu, cơ chế mã hóa AES-128 và giải pháp cập nhật firmware từ xa (OTA). Trên cơ sở đó, hệ thống được thiết kế theo kiến trúc phân tầng gồm Node cảm biến, Gateway và nền tảng Cloud, trong đó phần lớn quá trình xử lý dữ liệu và ra quyết định được thực hiện ngay tại thiết bị biên nhằm giảm tải cho hệ thống trung tâm và hạn chế sự phụ thuộc vào kết nối Internet.
+
+Về phần cứng, đồ án đã thiết kế hoàn chỉnh thiết bị Node sử dụng vi điều khiển ESP32-S3 làm bộ xử lý trung tâm, tích hợp các cảm biến đo nhiệt độ, độ ẩm, áp suất khí quyển, cường độ ánh sáng và khí độc phục vụ giám sát môi trường chuồng nuôi. Hệ thống sử dụng module truyền thông LoRa SX1278 để truyền dữ liệu khoảng cách xa với công suất tiêu thụ thấp, đồng thời được thiết kế PCB hai lớp cùng vỏ bảo vệ đạt yêu cầu triển khai trong môi trường thực tế.
+
+Về phần mềm, firmware được xây dựng trên nền tảng ESP-IDF kết hợp FreeRTOS với kiến trúc đa nhiệm. Các tác vụ thu thập dữ liệu, xử lý tín hiệu, truyền thông, mã hóa dữ liệu, quản lý năng lượng và lưu trữ ngoại tuyến được tổ chức thành các Task độc lập, sử dụng Queue, Mutex và Semaphore để đồng bộ tài nguyên. Thuật toán FSM được triển khai để xử lý dữ liệu cảm biến và đưa ra quyết định điều khiển ngay trên Node, giúp giảm đáng kể độ trễ phản hồi của hệ thống.
+
+Ngoài các chức năng giám sát cơ bản, đồ án còn hiện thực nhiều cơ chế nâng cao như quản lý năng lượng bằng Hybrid Sleep, lưu trữ ngoại tuyến theo cơ chế Store-and-Forward, giám sát Watchdog, cập nhật firmware OTA, mã hóa dữ liệu AES-128 kết hợp cơ chế chống Replay Attack và công cụ kiểm thử Hardware-In-the-Loop nhằm đánh giá hiệu năng toàn bộ hệ thống.
+
+Sau quá trình chế tạo và kiểm thử, các kết quả thực nghiệm cho thấy hệ thống hoạt động ổn định và đáp ứng hầu hết các chỉ tiêu kỹ thuật đã đề ra. Độ trễ xử lý tại Node nhỏ hơn giới hạn yêu cầu, truyền thông LoRa ổn định trong điều kiện thử nghiệm, cơ chế tiết kiệm năng lượng hoạt động hiệu quả, các tác vụ FreeRTOS được phân bổ hợp lý và không xảy ra hiện tượng tràn Stack hay rò rỉ bộ nhớ trong quá trình vận hành liên tục. Các kết quả kiểm thử cũng chứng minh hệ thống có khả năng duy trì hoạt động ngay cả khi Gateway hoặc kết nối Internet bị gián đoạn nhờ cơ chế lưu trữ ngoại tuyến và xử lý cục bộ tại thiết bị biên.
+
+Bảng~\ref{tab:summary_result} tổng hợp các kết quả chính đạt được của đồ án.
+
+\begin{table}[H]
+\centering
+\caption{Tóm tắt các kết quả chính của đồ án}
+\label{tab:summary_result}
+\begin{tabular}{p{5cm} p{9cm}}
+\hline
+\textbf{Nội dung} & \textbf{Kết quả đạt được} \\ \hline
+Thiết kế phần cứng &
+Hoàn thành thiết kế PCB hai lớp, chế tạo thiết bị Node sử dụng ESP32-S3. \\ 
+
+Thu thập dữ liệu &
+Giám sát nhiệt độ, độ ẩm, áp suất, ánh sáng và khí độc theo thời gian thực. \\
+
+Truyền thông &
+Triển khai thành công mạng truyền thông LoRa giữa Node và Gateway. \\
+
+Điện toán biên &
+Thực hiện tiền xử lý, lọc nhiễu và ra quyết định bằng FSM trực tiếp trên Node. \\ 
+
+Phần mềm &
+Xây dựng firmware đa nhiệm trên FreeRTOS với các cơ chế Queue, Mutex và Watchdog. \\ 
+
+Bảo mật &
+Triển khai mã hóa AES-128 kết hợp xác thực dữ liệu và chống Replay Attack. \\ 
+
+OTA &
+Hỗ trợ cập nhật firmware từ xa theo kiến trúc Hybrid OTA. \\ 
+Quản lý năng lượng &
+Áp dụng Hybrid Sleep và Deep Sleep nhằm giảm tiêu thụ năng lượng. \\
+
+Kiểm thử &
+Đáp ứng hầu hết các chỉ tiêu kỹ thuật đặt ra trong quá trình thiết kế và thực nghiệm. \\ \hline
+\end{tabular}
+\end{table}
+
+\subsection{Đóng góp của đồ án}
+
+\subsubsection{Về khoa học}
+
+Đồ án đã xây dựng một mô hình hệ thống IoT phân tán kết hợp giữa công nghệ truyền thông LoRa và kiến trúc Điện toán biên nhằm giải quyết bài toán giám sát vi khí hậu trong chăn nuôi gia cầm. So với mô hình IoT truyền thống phụ thuộc chủ yếu vào Cloud, giải pháp đề xuất chuyển phần lớn quá trình xử lý dữ liệu xuống thiết bị biên, giúp giảm độ trễ phản hồi, giảm lưu lượng truyền dữ liệu và nâng cao tính tự chủ của toàn bộ hệ thống.
+
+Bên cạnh đó, đề tài đã nghiên cứu và áp dụng phương pháp đồng thiết kế phần cứng/phần mềm (Hardware/Software Co-design) trong quá trình phát triển thiết bị Node. Cách tiếp cận này cho phép tối ưu đồng thời cấu trúc phần cứng, kiến trúc firmware và tài nguyên tính toán của vi điều khiển ESP32-S3, từ đó nâng cao hiệu năng xử lý và giảm mức tiêu thụ năng lượng.
+
+Đồ án cũng xây dựng kiến trúc phần mềm đa nhiệm trên nền FreeRTOS với chiến lược phân chia tác vụ theo từng lõi xử lý, sử dụng các cơ chế Mutex, Queue và Semaphore nhằm bảo đảm tính thời gian thực và hạn chế hiện tượng tranh chấp tài nguyên. Thuật toán FSM được thiết kế để xử lý dữ liệu cảm biến và ra quyết định điều khiển trực tiếp trên Node, góp phần hiện thực hóa mô hình Edge Computing trong hệ thống IoT nhúng.
+
+Ngoài ra, việc tích hợp đồng thời cơ chế bảo mật AES-128, chống Replay Attack, lưu trữ ngoại tuyến và cập nhật OTA đã tạo nên một kiến trúc firmware tương đối hoàn chỉnh, có thể được sử dụng làm nền tảng tham khảo cho các hệ thống IoT thời gian thực trong nhiều lĩnh vực khác nhau.
+
+\subsubsection{Về thực tiễn}
+
+Về mặt ứng dụng, đồ án đã chế tạo thành công một thiết bị Node hoàn chỉnh có khả năng triển khai trong các hệ thống giám sát môi trường chuồng nuôi gia cầm. Thiết bị có khả năng hoạt động độc lập, thu thập dữ liệu môi trường theo thời gian thực, xử lý cục bộ tại thiết bị biên và truyền dữ liệu đến Gateway thông qua mạng LoRa.
+
+Các kết quả thực nghiệm cho thấy hệ thống vận hành ổn định trong nhiều điều kiện kiểm thử khác nhau. Các thông số về độ trễ xử lý, truyền thông vô tuyến, quản lý năng lượng, bảo mật dữ liệu, tài nguyên RTOS và độ tin cậy của hệ thống đều đáp ứng các yêu cầu kỹ thuật đặt ra trong giai đoạn thiết kế.
+
+Bên cạnh khả năng ứng dụng trong giám sát vi khí hậu chuồng nuôi gia cầm, kiến trúc phần cứng và phần mềm của hệ thống có tính mở cao, cho phép mở rộng sang nhiều bài toán IoT khác như giám sát nhà kính, nông nghiệp thông minh, quan trắc môi trường hoặc giám sát công nghiệp với chi phí đầu tư tương đối thấp.
+
+\subsection{Hạn chế của đồ án}
+
+Mặc dù đã đạt được các mục tiêu nghiên cứu đặt ra, đồ án vẫn còn tồn tại một số hạn chế cần tiếp tục được nghiên cứu và hoàn thiện trong thời gian tới.
+
+Thứ nhất, phạm vi thực nghiệm của hệ thống còn tương đối hạn chế và chủ yếu được triển khai trong môi trường thử nghiệm hoặc mô hình giả lập. Việc đánh giá trên các trang trại chăn nuôi quy mô lớn với thời gian vận hành liên tục nhiều tháng chưa được thực hiện đầy đủ.
+
+Thứ hai, thuật toán điều khiển hiện nay chủ yếu dựa trên các ngưỡng được thiết lập trước và máy trạng thái FSM. Hệ thống chưa tích hợp các thuật toán học máy hoặc trí tuệ nhân tạo để dự báo xu hướng biến đổi môi trường, tối ưu chiến lược điều khiển hoặc phát hiện bất thường.
+
+Thứ ba, mạng truyền thông mới được triển khai theo mô hình LoRa điểm--điểm giữa Node và Gateway. Việc triển khai đầy đủ theo chuẩn LoRaWAN với khả năng quản lý số lượng lớn thiết bị, cân bằng tải và quản lý mạng vẫn chưa được nghiên cứu trong phạm vi đồ án.
+
+Ngoài ra, do giới hạn về thời gian và kinh phí thực hiện, một số nội dung như đánh giá tuổi thọ pin trong thời gian dài, kiểm thử độ bền cơ khí, khả năng chống nhiễu điện từ hoặc đánh giá độ ổn định của OTA trên quy mô lớn vẫn chưa được thực hiện đầy đủ.
+
+\subsection{Hướng phát triển trong tương lai}
+
+Trong thời gian tới, hệ thống có thể được tiếp tục nghiên cứu và phát triển theo các hướng sau.
+
+\subsubsection{Hướng phát triển về phần cứng và tối ưu năng lượng}
+
+Mặc dù hệ thống được xây dựng trong đồ án đã đáp ứng được các chỉ tiêu kỹ thuật đặt ra và vận hành ổn định trong quá trình kiểm thử, hiệu quả năng lượng vẫn là một trong những vấn đề cần tiếp tục được tối ưu để nâng cao khả năng triển khai thực tế lâu dài. Đối với các hệ thống IoT hoạt động bằng pin, năng lượng tiêu thụ quyết định trực tiếp đến tuổi thọ thiết bị, chi phí bảo trì cũng như khả năng triển khai trên diện rộng. Do đó, tối ưu công suất tiêu thụ của thiết bị Node được xem là một trong những hướng phát triển quan trọng nhất trong giai đoạn tiếp theo.
+
+Qua quá trình phân tích dòng tiêu thụ của từng khối chức năng, có thể nhận thấy cảm biến khí MQ-135 là thành phần tiêu tốn năng lượng lớn nhất trong toàn bộ hệ thống. Nguyên nhân là do cảm biến sử dụng phần tử gia nhiệt (Heater) hoạt động liên tục để duy trì nhiệt độ làm việc của lớp vật liệu bán dẫn oxit kim loại (MOX). Trong cấu hình hiện tại, bộ gia nhiệt luôn được cấp nguồn nhằm đảm bảo khả năng đo tức thời, dẫn đến dòng tiêu thụ duy trì ở mức tương đối cao ngay cả khi vi điều khiển đang ở trạng thái tiết kiệm năng lượng. Điều này làm giảm đáng kể hiệu quả của các cơ chế Deep Sleep và Tickless Idle đã được triển khai trong hệ thống.
+
+Một hướng cải tiến tiềm năng là áp dụng kỹ thuật \textit{Pulsed Heating} (gia nhiệt theo xung). Thay vì cấp nguồn liên tục cho phần tử gia nhiệt, cảm biến chỉ được kích hoạt trong những khoảng thời gian ngắn trước khi thực hiện phép đo. Sau khi hoàn tất quá trình lấy mẫu, bộ gia nhiệt được tắt hoàn toàn nhằm giảm mức tiêu thụ năng lượng trung bình. Phương pháp này đã được áp dụng trong nhiều nghiên cứu về mạng cảm biến không dây sử dụng cảm biến khí MOX nhằm kéo dài tuổi thọ pin mà vẫn duy trì độ chính xác đo ở mức chấp nhận được.
+
+Tuy nhiên, việc ngắt nguồn bộ gia nhiệt thường xuyên có thể làm thay đổi đặc tính điện trở nền của cảm biến và gây ra hiện tượng trôi giá trị đo theo thời gian. Vì vậy, để bảo đảm độ chính xác của dữ liệu, kỹ thuật Pulsed Heating cần được kết hợp với cơ chế bù trôi Baseline. Trong phương pháp này, giá trị điện trở tham chiếu $R_0$ của cảm biến sẽ được cập nhật định kỳ và lưu trữ trong bộ nhớ không mất dữ liệu. Trước mỗi chu kỳ đo, hệ thống tiến hành hiệu chỉnh giá trị cảm biến dựa trên sai lệch giữa Baseline hiện tại và Baseline tham chiếu ban đầu. Ngoài ra, có thể áp dụng các phương pháp nội suy tuyến tính hoặc bộ lọc thích nghi để giảm ảnh hưởng của quá trình trôi đặc tính theo thời gian.
+
+Một hướng nghiên cứu khác là thay thế cảm biến MQ-135 bằng các công nghệ cảm biến tiên tiến hơn. Hiện nay, các cảm biến điện hóa chuyên dụng cho khí Amoniac như dòng NH3-B1 hoặc các cảm biến quang học hồng ngoại không phân tán (NDIR) đang được sử dụng rộng rãi trong các hệ thống giám sát môi trường công nghiệp. Các cảm biến này có ưu điểm là không cần bộ gia nhiệt công suất lớn, độ ổn định cao hơn và khả năng chọn lọc khí tốt hơn so với cảm biến MOX truyền thống. Mặc dù chi phí đầu tư ban đầu cao hơn, việc thay thế cảm biến có thể mang lại lợi ích đáng kể về tuổi thọ pin, độ chính xác và độ tin cậy của toàn bộ hệ thống.
+
+Bảng~\ref{tab:sensor_compare_future} trình bày so sánh giữa các công nghệ cảm biến có thể được xem xét trong quá trình nâng cấp hệ thống.
+
+\begin{table}[H]
+\centering
+\caption{So sánh các công nghệ cảm biến khí tiềm năng}
+\label{tab:sensor_compare_future}
+\begin{tabular}{p{3cm} p{2cm} p{2.2cm} p{3cm} p{3.5cm}}
+\hline
+\textbf{Công nghệ} &
+\textbf{Công suất} &
+\textbf{Chi phí} &
+\textbf{Độ chính xác} &
+\textbf{Khả năng ứng dụng} \\
+\hline
+MOX (MQ-135) &
+Cao &
+Thấp &
+Trung bình &
+Phù hợp hệ thống chi phí thấp \\
+
+MOX + Pulsed Heating &
+Trung bình &
+Thấp &
+Khá &
+Tối ưu cho hệ thống chạy pin \\
+
+Điện hóa (NH$_3$-B1) &
+Thấp &
+Cao &
+Cao &
+Giám sát Amoniac chuyên dụng \\
+
+NDIR &
+Rất thấp &
+Rất cao &
+Rất cao &
+Quan trắc môi trường chính xác cao \\
+\hline
+\end{tabular}
+\end{table}
+
+Bên cạnh khối cảm biến, hệ thống quản lý nguồn cũng có thể được tiếp tục tối ưu. Trong phiên bản hiện tại, thiết bị sử dụng cơ chế Hybrid Sleep kết hợp giữa Deep Sleep và đánh thức định kỳ. Tuy nhiên, vẫn còn nhiều tiềm năng khai thác từ các tính năng quản lý năng lượng của ESP32-S3. Trong tương lai, có thể nghiên cứu cơ chế đánh thức theo sự kiện (Event-Driven Wakeup) nhằm giảm số lần kích hoạt vi điều khiển không cần thiết. Thay vì thức dậy theo chu kỳ cố định, Node chỉ được đánh thức khi có thay đổi đáng kể từ cảm biến hoặc khi xuất hiện yêu cầu từ Gateway.
+
+Ngoài ra, hệ thống có thể tích hợp các thuật toán quản lý năng lượng thích nghi dựa trên điều kiện môi trường và trạng thái pin. Ví dụ, khi mức pin giảm xuống dưới một ngưỡng xác định, thiết bị có thể tự động tăng chu kỳ lấy mẫu từ 5 phút lên 10 hoặc 15 phút nhằm kéo dài thời gian hoạt động. Ngược lại, khi xuất hiện các điều kiện bất thường như nhiệt độ tăng nhanh hoặc nồng độ khí độc vượt ngưỡng, tần suất lấy mẫu sẽ được tăng lên để bảo đảm khả năng giám sát liên tục.
+
+Một hướng phát triển đáng chú ý khác là kết hợp nguồn năng lượng tái tạo. Việc tích hợp tấm pin năng lượng mặt trời công suất nhỏ cùng bộ điều khiển sạc MPPT có thể giúp hệ thống vận hành gần như độc lập trong thời gian dài mà không cần thay pin định kỳ. Đây là giải pháp đặc biệt phù hợp đối với các trang trại chăn nuôi quy mô lớn, nơi việc bảo trì hàng chục hoặc hàng trăm Node cảm biến có thể gây tốn kém đáng kể.
+
+Bảng~\ref{tab:energy_future} tổng hợp các hướng nghiên cứu liên quan đến tối ưu năng lượng trong tương lai.
+
+\begin{table}[H]
+\centering
+\caption{Các hướng phát triển về tối ưu năng lượng}
+\label{tab:energy_future}
+\begin{tabular}{p{5cm} p{4cm} p{5cm}}
+\hline
+\textbf{Giải pháp} &
+\textbf{Mức độ phức tạp} &
+\textbf{Lợi ích kỳ vọng} \\
+\hline
+Pulsed Heating cho cảm biến MOX &
+Trung bình &
+Giảm đáng kể công suất tiêu thụ cảm biến khí \\
+
+Bù trôi Baseline tự động &
+Trung bình &
+Duy trì độ chính xác khi áp dụng Pulsed Heating \\
+
+Thay cảm biến điện hóa &
+Cao &
+Tăng độ chính xác và kéo dài tuổi thọ pin \\
+
+Quản lý năng lượng thích nghi &
+Trung bình &
+Tăng thời gian hoạt động của hệ thống \\
+
+Năng lượng mặt trời &
+Cao &
+Tiến tới vận hành tự chủ lâu dài \\
+\hline
+\end{tabular}
+\end{table}
+
+Tóm lại, việc tối ưu năng lượng không chỉ giúp kéo dài tuổi thọ pin mà còn quyết định khả năng thương mại hóa của hệ thống trong thực tế. Các kỹ thuật như Pulsed Heating, bù Baseline, sử dụng cảm biến công suất thấp và khai thác nguồn năng lượng tái tạo là những hướng nghiên cứu có tính khả thi cao và hứa hẹn mang lại hiệu quả đáng kể trong các phiên bản tiếp theo của hệ thống.
+
+\subsubsection{Hướng phát triển về mạng truyền thông và khả năng mở rộng}
+
+Trong phạm vi của đồ án, hệ thống truyền thông được xây dựng theo mô hình một Gateway và một Node cảm biến sử dụng giao thức LoRa điểm--điểm (Point-to-Point). Kiến trúc này phù hợp cho giai đoạn nghiên cứu và kiểm chứng nguyên lý hoạt động của hệ thống, đồng thời giúp đơn giản hóa việc phát triển firmware cũng như đánh giá hiệu năng của từng thành phần. Tuy nhiên, khi triển khai trong các trang trại chăn nuôi quy mô lớn, nơi có hàng chục hoặc hàng trăm Node hoạt động đồng thời, mô hình truyền thông hiện tại sẽ bộc lộ nhiều hạn chế về khả năng mở rộng, quản lý truy cập kênh truyền và độ tin cậy của toàn hệ thống.
+
+Một trong những hướng phát triển quan trọng là xây dựng cơ chế điều khiển truy cập môi trường truyền (Medium Access Control -- MAC) dành riêng cho mạng LoRa nhiều Node. Trong hệ thống hiện tại, mỗi Node truyền dữ liệu độc lập mà chưa có cơ chế phối hợp giữa các thiết bị. Nếu nhiều Node cùng phát dữ liệu trong cùng khoảng thời gian, các gói tin có thể bị chồng lấn trên kênh truyền, dẫn đến hiện tượng va chạm (Collision), làm tăng tỷ lệ mất gói và giảm hiệu quả sử dụng băng thông vô tuyến.
+
+Để giải quyết vấn đề này, có thể nghiên cứu triển khai giao thức CSMA/CA (Carrier Sense Multiple Access with Collision Avoidance). Theo cơ chế này, trước khi truyền dữ liệu, mỗi Node sẽ thực hiện kiểm tra trạng thái kênh truyền. Nếu phát hiện kênh đang bận, Node sẽ trì hoãn việc truyền trong một khoảng thời gian ngẫu nhiên trước khi thử lại. Phương pháp này giúp giảm xác suất va chạm giữa các Node mà không yêu cầu đồng bộ thời gian chặt chẽ. Mặc dù LoRa không hỗ trợ cơ chế cảm nhận sóng mang hoàn chỉnh như Wi-Fi, việc kết hợp chỉ số RSSI cùng thời gian chờ ngẫu nhiên vẫn có thể cải thiện đáng kể hiệu suất của mạng trong các hệ thống có số lượng Node trung bình.
+
+Đối với các trang trại có số lượng thiết bị lớn, một hướng phát triển hiệu quả hơn là áp dụng cơ chế lập lịch TDMA (Time Division Multiple Access). Trong phương pháp này, Gateway sẽ phân chia chu kỳ truyền thành nhiều khe thời gian (Time Slot), mỗi Node chỉ được phép truyền trong khe thời gian đã được cấp phát. Cơ chế này gần như loại bỏ hoàn toàn hiện tượng va chạm giữa các gói tin, đồng thời giúp dự đoán trước lưu lượng mạng và tối ưu mức tiêu thụ năng lượng của các Node do thiết bị chỉ cần đánh thức vào đúng thời điểm truyền dữ liệu.
+
+
+Ngoài cơ chế truy cập kênh, phạm vi phủ sóng của hệ thống cũng là một nội dung cần được tiếp tục nghiên cứu. Trong điều kiện thực tế, các trang trại chăn nuôi có thể trải dài trên diện tích hàng chục héc-ta hoặc bị chia thành nhiều khu vực bởi tường bê tông, nhà kho và các công trình kim loại. Những vật cản này có thể làm suy giảm tín hiệu vô tuyến và khiến một số Node không thể truyền trực tiếp đến Gateway.
+
+Để mở rộng vùng phủ sóng, có thể nghiên cứu mô hình truyền tiếp đa chặng (Multi-hop). Theo kiến trúc này, các Node ở gần Gateway sẽ đóng vai trò như các nút chuyển tiếp (Relay Node), hỗ trợ truyền dữ liệu từ các Node ở xa về trung tâm. Nhờ vậy, khoảng cách truyền hiệu dụng của toàn mạng được mở rộng đáng kể mà không cần tăng công suất phát hoặc lắp đặt thêm Gateway.
+
+Tuy nhiên, cơ chế Multi-hop cũng đặt ra nhiều thách thức như lựa chọn tuyến đường tối ưu, cân bằng tải giữa các Node chuyển tiếp, tránh lặp gói tin và đồng bộ dữ liệu. Vì vậy, các thuật toán định tuyến nhẹ phù hợp với vi điều khiển tài nguyên hạn chế cần được nghiên cứu trong các phiên bản tiếp theo.
+
+Một hướng phát triển khác có giá trị thực tiễn cao là chuyển đổi từ giao thức truyền thông điểm--điểm sang kiến trúc LoRaWAN. Khác với mô hình hiện tại, LoRaWAN cung cấp một lớp MAC tiêu chuẩn, hỗ trợ quản lý thiết bị, xác thực, mã hóa đầu cuối, điều khiển tốc độ dữ liệu thích nghi (Adaptive Data Rate), đồng bộ thời gian và quản lý mạng quy mô lớn. Việc áp dụng LoRaWAN sẽ giúp hệ thống tương thích với các Gateway thương mại và có khả năng tích hợp trực tiếp với các nền tảng IoT phổ biến.
+
+Bảng~\ref{tab:lora_compare} trình bày sự khác biệt giữa mô hình truyền thông hiện tại và các hướng phát triển trong tương lai.
+
+\begin{table}[H]
+\centering
+\caption{So sánh các kiến trúc truyền thông}
+\label{tab:lora_compare}
+\begin{tabular}{p{3cm} p{3cm} p{3cm} p{5cm}}
+\hline
+\textbf{Kiến trúc} &
+\textbf{Quy mô Node} &
+\textbf{Quản lý mạng} &
+\textbf{Khả năng ứng dụng} \\
+\hline
+Point-to-Point &
+1--5 &
+Thủ công &
+Nghiên cứu, thử nghiệm. \\
+
+Multi-hop LoRa &
+10--50 &
+Định tuyến phân tán &
+Trang trại diện tích lớn. \\
+
+LoRaWAN &
+Hàng trăm Node &
+Tự động &
+Triển khai thương mại. \\
+\hline
+\end{tabular}
+\end{table}
+
+Song song với việc mở rộng kiến trúc truyền thông, quá trình đánh giá hệ thống cũng cần được thực hiện trên quy mô lớn hơn. Trong phạm vi đồ án, các thử nghiệm chủ yếu được tiến hành với một Node nhằm kiểm chứng tính đúng đắn của thiết kế. Trong tương lai, hệ thống nên được triển khai đồng thời từ ba đến năm Node hoặc nhiều hơn trong cùng một khu vực chăn nuôi để đánh giá khả năng hoạt động của mạng dưới điều kiện tải thực tế.
+
+Các nội dung kiểm thử nên bao gồm tỷ lệ mất gói khi nhiều Node truyền đồng thời, độ trễ truyền dữ liệu, mức sử dụng kênh vô tuyến, mức tiêu thụ năng lượng của từng Node, khả năng đồng bộ dữ liệu và độ ổn định của Gateway khi xử lý nhiều luồng thông tin cùng lúc. Việc thu thập các số liệu này sẽ giúp đánh giá chính xác giới hạn của hệ thống, đồng thời cung cấp cơ sở khoa học cho việc tối ưu các thuật toán điều phối mạng trong các phiên bản tiếp theo.
+
+Nhìn chung, việc phát triển hệ thống theo hướng hỗ trợ nhiều Node, bổ sung cơ chế MAC hiệu quả, mở rộng vùng phủ sóng bằng Multi-hop và tiến tới tích hợp kiến trúc LoRaWAN sẽ nâng cao đáng kể khả năng mở rộng cũng như giá trị ứng dụng thực tiễn của hệ thống. Đây là bước chuyển quan trọng giúp đưa hệ thống từ quy mô nghiên cứu trong phòng thí nghiệm đến khả năng triển khai trong các trang trại chăn nuôi thông minh quy mô lớn.
+
+\subsubsection{Hướng phát triển về trí tuệ nhân tạo tại biên và các thuật toán xử lý thông minh}
+
+Trong phiên bản hiện tại của hệ thống, việc xử lý dữ liệu tại Node chủ yếu được thực hiện thông qua máy trạng thái hữu hạn (Finite State Machine -- FSM) kết hợp với các ngưỡng nhiệt độ, độ ẩm và nồng độ khí được thiết lập trước. Phương pháp này có ưu điểm là đơn giản, dễ triển khai trên các vi điều khiển có tài nguyên hạn chế, chi phí tính toán thấp và đảm bảo khả năng xử lý thời gian thực. Tuy nhiên, FSM chỉ phản ứng khi giá trị cảm biến đã vượt ngưỡng quy định, nghĩa là hệ thống chỉ thực hiện điều khiển sau khi điều kiện môi trường đã thay đổi. Trong thực tế, nhiều hiện tượng môi trường diễn ra theo xu hướng liên tục và có thể được dự báo trước nếu khai thác hiệu quả dữ liệu lịch sử. Vì vậy, việc tích hợp các thuật toán trí tuệ nhân tạo tại biên (TinyML) là một hướng phát triển quan trọng nhằm nâng cao tính thông minh và khả năng tự thích nghi của hệ thống.
+
+TinyML là xu hướng triển khai các mô hình học máy có kích thước nhỏ trực tiếp trên các thiết bị nhúng có tài nguyên tính toán và bộ nhớ hạn chế. Với bộ vi điều khiển ESP32-S3 được sử dụng trong đồ án, việc thực thi các mô hình học máy nhẹ hoàn toàn khả thi nhờ bộ nhớ SRAM tương đối lớn, khả năng xử lý dấu phẩy động và hỗ trợ các thư viện như TensorFlow Lite for Microcontrollers hoặc Edge Impulse. Thay vì chỉ dựa trên các ngưỡng cố định, hệ thống có thể học từ dữ liệu thu thập được để đưa ra các quyết định điều khiển phù hợp với điều kiện vận hành thực tế của từng trang trại.
+
+Một hướng nghiên cứu có tính khả thi cao là xây dựng mô hình dự báo ngắn hạn đối với các thông số vi khí hậu trong chuồng nuôi. Dữ liệu nhiệt độ, độ ẩm, nồng độ khí độc và cường độ ánh sáng thường có xu hướng biến đổi liên tục theo thời gian và chịu ảnh hưởng của chu kỳ ngày đêm, mật độ vật nuôi cũng như điều kiện thời tiết bên ngoài. Bằng cách sử dụng dữ liệu lịch sử trong khoảng từ vài giờ đến vài ngày, mô hình học máy có thể dự báo xu hướng thay đổi của môi trường trong khoảng thời gian từ 15 đến 30 phút tiếp theo. Khi phát hiện khả năng nhiệt độ sẽ vượt ngưỡng cho phép, hệ thống có thể chủ động kích hoạt quạt thông gió hoặc hệ thống làm mát trước khi môi trường thực sự trở nên bất lợi đối với đàn gia cầm.
+
+Đối với các vi điều khiển có tài nguyên hạn chế, các mô hình như Decision Tree hoặc Random Forest sau khi được lượng tử hóa xuống độ chính xác 8 bit là những lựa chọn phù hợp. Các mô hình này có cấu trúc đơn giản, tốc độ suy luận nhanh và yêu cầu bộ nhớ thấp hơn nhiều so với mạng nơ-ron sâu. Ngoài ra, việc lượng tử hóa còn giúp giảm kích thước mô hình, rút ngắn thời gian xử lý và giảm mức tiêu thụ năng lượng của bộ vi điều khiển trong quá trình suy luận.
+
+Bên cạnh bài toán dự báo, hệ thống cũng có thể được phát triển theo hướng phát hiện bất thường (Anomaly Detection). Trong quá trình vận hành thực tế, không phải mọi sự cố đều xuất hiện dưới dạng giá trị vượt ngưỡng. Một số trường hợp như cảm biến bị hỏng, quạt thông gió mất tác dụng, cháy cục bộ hoặc rò rỉ khí độc có thể tạo ra các mẫu dữ liệu bất thường mà hệ thống FSM khó có thể nhận biết. Do đó, việc bổ sung các thuật toán phát hiện bất thường sẽ giúp nâng cao khả năng giám sát và đảm bảo an toàn cho hệ thống.
+
+Một trong những giải pháp phù hợp là sử dụng mô hình One-Class Support Vector Machine (One-Class SVM). Khác với các mô hình phân loại truyền thống cần dữ liệu đã được gán nhãn cho cả trạng thái bình thường và trạng thái lỗi, One-Class SVM chỉ cần học từ dữ liệu vận hành bình thường của hệ thống. Khi xuất hiện các mẫu dữ liệu có đặc trưng khác biệt đáng kể so với tập dữ liệu đã học, mô hình sẽ cảnh báo nguy cơ bất thường để người quản lý tiến hành kiểm tra. Phương pháp này đặc biệt phù hợp với các hệ thống IoT trong nông nghiệp, nơi số lượng mẫu lỗi thường rất ít và khó thu thập.
+
+Ngoài các mô hình học máy truyền thống, trong tương lai có thể nghiên cứu áp dụng các mạng nơ-ron nhẹ như Tiny Neural Network hoặc các mô hình Autoencoder kích thước nhỏ nhằm phát hiện các bất thường phức tạp hơn. Tuy nhiên, việc triển khai các mô hình này cần được cân nhắc giữa độ chính xác đạt được và tài nguyên phần cứng của thiết bị. Trong nhiều trường hợp, các mô hình học máy đơn giản nhưng được tối ưu tốt sẽ mang lại hiệu quả cao hơn so với các mô hình có cấu trúc quá phức tạp.
+
+Một hướng phát triển khác là xây dựng cơ chế tự điều chỉnh ngưỡng điều khiển dựa trên dữ liệu lịch sử. Trong phiên bản hiện tại, các giá trị ngưỡng được thiết lập cố định theo từng giai đoạn phát triển của gia cầm. Tuy nhiên, điều kiện môi trường thực tế tại mỗi trang trại có thể khác nhau do sự khác biệt về giống vật nuôi, mật độ nuôi, kết cấu chuồng trại và điều kiện khí hậu của từng địa phương. Bằng cách phân tích dữ liệu vận hành trong thời gian dài, hệ thống có thể tự động hiệu chỉnh các ngưỡng điều khiển để phù hợp hơn với điều kiện thực tế, từ đó nâng cao hiệu quả điều hòa môi trường và giảm mức tiêu thụ điện năng của các thiết bị chấp hành.
+
+Để triển khai các thuật toán học máy tại biên một cách hiệu quả, cần xây dựng quy trình huấn luyện và cập nhật mô hình phù hợp. Dữ liệu thu thập từ các Node sẽ được lưu trữ trên nền tảng Cloud để phục vụ quá trình tiền xử lý và huấn luyện mô hình trên máy tính có năng lực tính toán cao. Sau khi hoàn tất quá trình huấn luyện, mô hình được lượng tử hóa, tối ưu kích thước và chuyển đổi sang định dạng phù hợp trước khi nạp vào bộ nhớ Flash của ESP32-S3. Trong quá trình vận hành, Node chỉ thực hiện bước suy luận (Inference), nhờ đó giảm đáng kể yêu cầu về tài nguyên tính toán.
+
+Trong tương lai, sự kết hợp giữa Edge Computing và TinyML sẽ tạo nên một hệ thống IoT có khả năng tự học, tự thích nghi và đưa ra quyết định thông minh ngay tại thiết bị biên. Điều này không chỉ giúp giảm lưu lượng truyền dữ liệu lên Cloud, giảm độ trễ phản hồi mà còn nâng cao tính ổn định của hệ thống trong điều kiện mất kết nối Internet. Đồng thời, việc triển khai các mô hình học máy nhẹ trên ESP32-S3 sẽ góp phần khẳng định tính khả thi của xu hướng trí tuệ nhân tạo tại biên trong các ứng dụng nông nghiệp thông minh, mở ra khả năng xây dựng các hệ thống giám sát môi trường có mức độ tự động hóa và độ tin cậy cao hơn trong tương lai.
+
+\subsubsection{Hướng phát triển về phần mềm, giao diện người dùng và hoàn thiện sản phẩm}
+
+Bên cạnh việc nâng cao hiệu năng phần cứng và thuật toán xử lý tại thiết bị biên, hệ thống phần mềm cũng cần tiếp tục được phát triển nhằm nâng cao trải nghiệm người dùng, khả năng quản lý tập trung và mức độ sẵn sàng khi triển khai trong các trang trại chăn nuôi thực tế. Trong phạm vi đồ án, giao diện giám sát chủ yếu tập trung vào việc hiển thị các thông số cảm biến theo thời gian thực và điều khiển cơ bản thông qua nền tảng Cloud. Mặc dù đã đáp ứng yêu cầu kiểm chứng chức năng của hệ thống, giao diện hiện tại vẫn còn tương đối đơn giản và chưa khai thác hết tiềm năng của một hệ thống IoT hiện đại.
+
+Một hướng phát triển quan trọng là xây dựng nền tảng quản lý tập trung dưới dạng Dashboard Web kết hợp với ứng dụng di động đa nền tảng sử dụng Flutter hoặc React Native. Giao diện mới cần được thiết kế theo hướng trực quan, thân thiện với người sử dụng và hỗ trợ quản lý đồng thời nhiều khu vực chăn nuôi. Thay vì chỉ hiển thị các giá trị tức thời của cảm biến, hệ thống nên cung cấp các biểu đồ biến thiên theo thời gian, thống kê theo ngày, tuần và tháng, giúp người quản lý dễ dàng theo dõi xu hướng biến đổi của các thông số môi trường.
+
+Ngoài chức năng giám sát, Dashboard có thể bổ sung nhiều công cụ hỗ trợ quản lý như cấu hình ngưỡng cảnh báo, thiết lập chu kỳ lấy mẫu, theo dõi trạng thái hoạt động của từng Node, giám sát dung lượng pin, cường độ tín hiệu LoRa (RSSI, SNR), cũng như quản lý nhật ký sự kiện của toàn bộ hệ thống. Việc trực quan hóa các thông tin này không chỉ giúp người vận hành nhanh chóng phát hiện các bất thường mà còn tạo điều kiện thuận lợi cho công tác bảo trì và tối ưu hệ thống trong quá trình sử dụng lâu dài.
+
+Đối với ứng dụng di động, hệ thống có thể tích hợp cơ chế thông báo đẩy (Push Notification) hoặc gửi tin nhắn SMS khi phát hiện các sự kiện nguy hiểm như nhiệt độ vượt ngưỡng, nồng độ khí độc tăng cao, Node mất kết nối hoặc điện áp pin giảm xuống dưới mức an toàn. Việc nhận được cảnh báo ngay trên điện thoại giúp người quản lý có thể phản ứng kịp thời mà không cần thường xuyên truy cập Dashboard để theo dõi hệ thống.
+
+Song song với việc phát triển giao diện người dùng, các cơ chế bảo mật cũng cần được tiếp tục hoàn thiện. Trong phiên bản hiện tại, hệ thống đã áp dụng mã hóa AES-128 kết hợp cơ chế xác thực và chống tấn công phát lại (Replay Attack). Tuy nhiên, toàn bộ các Node vẫn sử dụng cùng một khóa bảo mật, điều này có thể làm giảm mức độ an toàn khi hệ thống được mở rộng với số lượng thiết bị lớn.
+
+Một hướng nghiên cứu phù hợp là xây dựng cơ chế quản lý khóa (Key Management) theo từng thiết bị. Theo đó, mỗi Node sẽ được cấp một định danh và khóa bí mật riêng trong quá trình khởi tạo. Gateway đóng vai trò quản lý và xác thực các Node trước khi chấp nhận dữ liệu truyền về. Ngoài ra, khóa bảo mật có thể được thay đổi định kỳ thông qua các gói tin điều khiển được mã hóa nhằm hạn chế nguy cơ lộ khóa trong quá trình vận hành lâu dài. Việc áp dụng cơ chế quản lý khóa riêng biệt sẽ giúp tăng cường khả năng chống giả mạo thiết bị, đồng thời nâng cao mức độ an toàn cho toàn bộ mạng IoT.
+
+Bên cạnh các nội dung về phần mềm, việc hoàn thiện thiết kế cơ khí của sản phẩm cũng là một hướng phát triển cần được quan tâm. Trong đồ án, thiết bị Node mới được chế tạo dưới dạng nguyên mẫu nhằm phục vụ mục đích nghiên cứu và kiểm thử. Để có thể triển khai ngoài thực địa trong thời gian dài, thiết kế vỏ bảo vệ cần được tối ưu hơn về cả độ bền cơ học lẫn khả năng chống chịu môi trường.
+
+Một trong những mục tiêu quan trọng là hoàn thiện vỏ hộp đạt chuẩn bảo vệ IP65 như chỉ tiêu kỹ thuật đã đề ra. Điều này đòi hỏi phải tối ưu cấu trúc gioăng cao su, vị trí các đầu nối cáp, khe thoát khí và màng lọc chống nước nhằm đảm bảo thiết bị vẫn có khả năng trao đổi không khí với môi trường trong khi ngăn chặn bụi và nước xâm nhập vào bên trong. Đồng thời, các thử nghiệm về khả năng chịu nhiệt, chống tia cực tím, chống ăn mòn và chống rung động cũng cần được thực hiện để đánh giá độ bền của thiết bị trong điều kiện vận hành thực tế.
+
+Bảng~\ref{tab:software_future} tổng hợp các hướng phát triển liên quan đến phần mềm và hoàn thiện sản phẩm.
+
+\begin{table}[H]
+\centering
+\caption{Các hướng phát triển về phần mềm và sản phẩm}
+\label{tab:software_future}
+\begin{tabular}{p{4.5cm} p{2.5cm} p{6.5cm}}
+\hline
+\textbf{Hướng phát triển} &
+\textbf{Mức ưu tiên} &
+\textbf{Lợi ích mang lại} \\
+\hline
+Dashboard Web chuyên nghiệp &
+Cao &
+Quản lý tập trung nhiều Node, trực quan hóa dữ liệu. \\
+
+Ứng dụng Flutter/React Native &
+Cao &
+Giám sát và điều khiển hệ thống mọi lúc, mọi nơi. \\
+
+Push Notification và SMS &
+Trung bình &
+Cảnh báo sự cố theo thời gian thực. \\
+
+Quản lý khóa bảo mật riêng cho từng Node &
+Cao &
+Nâng cao mức độ an toàn và chống giả mạo thiết bị. \\
+
+Hoàn thiện vỏ hộp IP65 &
+Cao &
+Đáp ứng điều kiện vận hành ngoài thực địa. \\
+\hline
+\end{tabular}
+\end{table}
+
+Cuối cùng, một trong những nội dung có ý nghĩa quyết định đối với khả năng thương mại hóa của hệ thống là kiểm thử thực địa trong thời gian dài. Trong phạm vi đồ án, việc đánh giá chủ yếu được thực hiện trong môi trường phòng thí nghiệm hoặc mô hình thử nghiệm với số lượng thiết bị còn hạn chế. Do giới hạn về thời gian và điều kiện triển khai, hệ thống chưa được kiểm chứng đầy đủ dưới các điều kiện vận hành thực tế như sự thay đổi của thời tiết, độ ẩm cao, bụi bẩn, hơi ăn mòn từ chất thải chăn nuôi hoặc sự suy giảm dung lượng pin sau thời gian dài sử dụng.
+
+Trong tương lai, hệ thống nên được triển khai thử nghiệm tại một trang trại chăn nuôi thực tế với tối thiểu từ ba đến năm Node hoạt động liên tục trong thời gian ít nhất một tháng. Quá trình thử nghiệm cần theo dõi các chỉ tiêu như độ ổn định của kết nối LoRa, tỷ lệ mất gói tin, độ chính xác của cảm biến, mức tiêu thụ năng lượng, tuổi thọ pin, khả năng chống chịu của vỏ thiết bị và mức độ ổn định của hệ thống khi vận hành liên tục. Các số liệu thu được sẽ là cơ sở quan trọng để đánh giá tính khả thi của giải pháp cũng như tối ưu các thành phần phần cứng và phần mềm trước khi triển khai trên quy mô lớn.
+
+Bảng~\ref{tab:field_test_future} trình bày kế hoạch kiểm thử thực địa được đề xuất cho các giai đoạn nghiên cứu tiếp theo.
+
+\begin{table}[H]
+\centering
+\caption{Định hướng kiểm thử thực địa trong tương lai}
+\label{tab:field_test_future}
+\begin{tabular}{p{4cm} p{4cm} p{6cm}}
+\hline
+\textbf{Hạng mục} &
+\textbf{Mục tiêu} &
+\textbf{Chỉ tiêu đánh giá} \\
+\hline
+Triển khai nhiều Node &
+Đánh giá khả năng mở rộng &
+Tỷ lệ mất gói, độ trễ, độ ổn định mạng. \\
+
+Vận hành liên tục trong 01 tháng &
+Đánh giá độ tin cậy &
+Tuổi thọ pin, độ ổn định cảm biến, lỗi hệ thống. \\
+
+Đánh giá cơ khí &
+Kiểm tra độ bền môi trường &
+Khả năng chống nước, bụi, ăn mòn và rung động. \\
+
+Đánh giá hiệu năng tổng thể &
+Xác nhận tính khả thi &
+Khả năng đáp ứng yêu cầu triển khai thực tế. \\
+\hline
+\end{tabular}
+\end{table}
+
+Tổng hợp các định hướng trên cho thấy hệ thống được phát triển trong đồ án đã xây dựng được nền tảng phần cứng và phần mềm tương đối hoàn chỉnh cho bài toán giám sát vi khí hậu chuồng nuôi gia cầm ứng dụng công nghệ LoRa và Điện toán biên. Trong tương lai, việc tiếp tục tối ưu quản lý năng lượng, mở rộng mạng truyền thông, tích hợp các thuật toán trí tuệ nhân tạo tại biên, nâng cao tính bảo mật, hoàn thiện giao diện người dùng và kiểm chứng hệ thống trong điều kiện thực tế sẽ góp phần nâng cao hiệu năng, độ tin cậy cũng như khả năng thương mại hóa của sản phẩm. Những hướng nghiên cứu này không chỉ phù hợp với xu thế phát triển của Internet vạn vật và nông nghiệp thông minh mà còn tạo tiền đề để hệ thống có thể được mở rộng sang nhiều lĩnh vực giám sát môi trường khác như nhà kính, thủy sản, kho bảo quản nông sản hoặc quan trắc môi trường công nghiệp.

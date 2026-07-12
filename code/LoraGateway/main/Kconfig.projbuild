@@ -1,0 +1,34 @@
+menu "LoRa Gateway Configuration"
+
+    # LUU Y: WiFi / Local Server / LoRa cua gateway chinh trong main/gw_config.h
+    # (de sua nhanh, KHONG can menuconfig). Da BO Firebase.
+
+    config GW_WIFI_SSID
+        string "WiFi SSID (khong dung - xem gw_config.h)"
+        default "huu nam"
+
+    config GW_WIFI_PASS
+        string "WiFi password"
+        default "matkhau987"
+
+    config LORA_FREQ_HZ
+        int "LoRa frequency (Hz)"
+        default 433000000
+        help
+            Phai giong node.
+
+    config LORA_SF
+        int "LoRa spreading factor (7-12)"
+        range 7 12
+        default 9
+        help
+            Phai giong node.
+
+    config GW_WDT_TIMEOUT_S
+        int "Watchdog timeout (seconds)"
+        range 3 60
+        default 10
+        help
+            Neu task LoRa/telemetry treo qua thoi gian nay, chip se tu reset.
+
+endmenu

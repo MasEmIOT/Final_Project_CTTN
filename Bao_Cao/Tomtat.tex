@@ -1,0 +1,61 @@
+\section*{TÓM TẮT ĐỒ ÁN}
+\phantomsection\addcontentsline{toc}{section}{\numberline {}TÓM TẮT ĐỒ ÁN}
+
+Trong đề tài \textit{Nghiên cứu thiết kế và chế tạo hệ thống IoT giám sát vi khí hậu chuồng nuôi gia cầm ứng dụng LoRa và Điện toán biên}, một hệ thống IoT phân tán được đề xuất nhằm giải quyết "Nghịch lý đám mây", tối ưu hóa độ trễ điều khiển và năng lượng tiêu thụ. Nội dung đồ án bao gồm các chương: 
+
+\textit{Chương 1: Tổng quan về đề tài và cơ sở khoa học}
+
+Trình bày thực trạng chăn nuôi gia cầm và hạn chế của các giải pháp IoT đám mây khi mất kết nối. Từ đó, xác lập mục tiêu thiết kế thiết bị Node ứng dụng Điện toán biên và LoRa với các chỉ tiêu khắt khe về độ trễ, năng lượng và bảo mật.
+
+\textit{Chương 2: Cơ sở lý thuyết}
+
+Hệ thống hóa các lý thuyết cốt lõi gồm: Mạng cảm biến không dây (WSN), sinh lý gia cầm (chỉ số THI), kiến trúc Điện toán biên, lớp vật lý LoRa (kỹ thuật CSS), FreeRTOS và cơ sở thuật toán mã hóa AES-128.
+
+\textit{Chương 3: Phân tích và thiết kế tổng thể hệ thống}
+
+Biện luận lựa chọn giải pháp phần cứng (ESP32-S3, tổ hợp cảm biến, IC nguồn). Đồng thời, thiết kế kiến trúc phần mềm đa nhiệm trên FreeRTOS, lập thuật toán máy trạng thái (FSM) và cơ sở bảo mật hệ thống.
+
+\textit{Chương 4: Triển khai đề tài}
+
+Trình bày chi tiết quá trình hiện thực hóa thiết bị Node. Phần cứng gồm thiết kế sơ đồ nguyên lý và mạch in (PCB) chống nhiễu. Phần mềm bao gồm lập trình Driver, bộ lọc số, mã hóa AEAD, chế độ Hybrid Sleep, lưu trữ ngoại tuyến và công cụ kiểm thử EdgeProfiler.
+
+\textit{Chương 5: Kiểm thử và đánh giá kết quả}
+
+Đo lường định lượng thực nghiệm trên phần cứng và phần mềm. Kết quả về độ trễ xử lý ($<50$ ms), dòng tiêu thụ, tài nguyên RTOS và chất lượng LoRa đều xác nhận hệ thống đáp ứng hoàn toàn các chỉ tiêu kỹ thuật đã cam kết.
+
+\textit{Chương 6: Kết luận và hướng phát triển}
+
+Tổng kết các đóng góp khoa học, thực tiễn và đề xuất hướng mở rộng tương lai như áp dụng trí tuệ nhân tạo tại biên (TinyML), tối ưu năng lượng bằng Pulsed Heating, và triển khai kiến trúc mạng LoRaWAN.
+
+\newpage
+
+\section*{ABSTRACT}
+\phantomsection\addcontentsline{toc}{section}{\numberline {}ABSTRACT}
+
+In the project \textit{Research, Design, and Fabrication of an IoT System for Monitoring Poultry Microclimate Using LoRa and Edge Computing}, a distributed IoT system is proposed to address the "Cloud Paradox," optimizing control latency and power consumption. The project content includes the following chapters:
+
+\textit{Chapter 1: Overview and Scientific Basis}
+
+Presents challenges in intensive poultry farming and the limitations of cloud-based IoT solutions during network failures. It establishes the design objectives for an Edge-LoRa Node, specifying strict quantitative requirements for latency, power, and security.
+
+\textit{Chapter 2: Theoretical Basis}
+
+Systematizes the core theoretical foundations, including Wireless Sensor Networks (WSN), poultry physiology (THI index), Edge Computing architecture, LoRa physical layer (CSS), Real-Time Operating Systems (FreeRTOS), and the AES-128 encryption algorithm.
+
+\textit{Chapter 3: System Analysis and Overall Design}
+
+Justifies the selection of hardware technologies (ESP32-S3 SoC, sensors, power ICs). Furthermore, it designs the multitasking software architecture on FreeRTOS, Finite State Machine (FSM) algorithms, and the system's security mechanisms.
+
+\textit{Chapter 4: Project Implementation}
+
+Details the realization of the Edge Node. Hardware implementation covers the schematic design and anti-interference PCB layout. Software includes programming Drivers, digital filters, AEAD encryption, Hybrid Sleep mode, offline storage, and the EdgeProfiler testing tool.
+
+\textit{Chapter 5: Testing and Result Evaluation}
+
+Conducts quantitative empirical measurements on hardware and software. Test results regarding processing latency ($<50$ ms), power consumption, RTOS resource allocation, and LoRa transmission quality confirm that the system fully meets all committed specifications.
+
+\textit{Chapter 6: Conclusion and Future Development}
+
+Summarizes the project's scientific and practical contributions. It also proposes future research directions, such as applying Edge AI (TinyML), further energy optimization using Pulsed Heating, and deploying a LoRaWAN network architecture.
+
+\cleardoublepage

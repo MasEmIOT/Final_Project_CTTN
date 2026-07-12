@@ -1,0 +1,604 @@
+
+\section*{CHƯƠNG 4. TRIỂN KHAI ĐỀ TÀI}
+\addcontentsline{toc}{section}{\numberline {} CHƯƠNG 4. TRIỂN KHAI ĐỀ TÀI}
+\setcounter{section}{4}
+\setcounter{subsection}{0}
+\setcounter{figure}{0}
+\setcounter{table}{0}
+Chương này trình bày quá trình hiện thực hóa hệ thống thành một sản phẩm hoàn chỉnh, chạy được trên phần cứng thực tế. Nội dung được chia thành hai phần lớn tương ứng với hai trục công việc song song của một dự án nhúng: phần triển khai phần cứng đi sâu vào việc giải phẫu sơ đồ nguyên lý (Schematic) và quy hoạch mạch in (PCB Layout) của thiết bị Node, phân tích vai trò, chức năng, điểm mạnh -- điểm yếu cùng lý do thiết kế của từng khối linh kiện; phần triển khai phần mềm trình bày chi tiết kiến trúc firmware đa nhiệm, các lớp driver, thuật toán Điện toán biên, cơ chế bảo mật, quản lý năng lượng, lưu trữ ngoại tuyến cũng như công cụ kiểm thử Hardware-In-the-Loop được xây dựng riêng cho đề tài.
+
+\subsection{Triển khai phần cứng thiết bị Node}
+Phần cứng của thiết bị Node được thiết kế dưới dạng một bo mạch in tùy biến (Custom PCB) hai lớp, tích hợp toàn bộ các khối chức năng trên cùng một nền FR4 thay vì lắp ghép các module rời rạc. 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\linewidth]{Thuc_Hanh/Image/Schematic.png}
+    \caption{Sơ đồ nguyên lý tổng thể của thiết bị Node}
+    \label{Hình 4.1}
+\end{figure}
+Cách tiếp cận tích hợp này tuy đòi hỏi nhiều công sức thiết kế và gia công hơn, nhưng đổi lại cho phép kiểm soát chặt chẽ đường đi của tín hiệu cao tần, tối ưu hóa diện tích, nâng cao độ tin cậy cơ học và tạo ra một sản phẩm có hình thức tiệm cận sản phẩm công nghiệp. Toàn bộ sơ đồ nguyên lý được tổ chức thành các khối chức năng tách bạch như Hình \ref{Hình 4.1}, giúp việc dò lỗi và bảo trì trở nên thuận tiện.
+
+
+
+\subsubsection{Khối cấp nguồn và bảo vệ ngõ vào USB-C}
+Mọi hệ thống điện tử đều bắt đầu từ nguồn, và độ ổn định của nguồn quyết định trực tiếp độ tin cậy của toàn hệ. Hình \ref{Hình 4.2} cho thấy ngõ vào nguồn của Node sử dụng đầu cắm USB Type-C (linh kiện J2, USB\_C\_Receptacle\_USB2.0\_16P) -- một chuẩn kết nối hiện đại, có thể cắm thuận nghịch và chịu được dòng lớn. Để chuẩn USB-C hoạt động đúng ở chế độ thiết bị nhận nguồn (UFP), hai chân cấu hình CC1/CC2 được kéo xuống đất qua hai điện trở $5{,}1\,\text{k}\Omega$ (R1, R2); đây là yêu cầu bắt buộc của đặc tả USB-C để nguồn cấp nhận diện và cấp dòng $5\,\text{V}$.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\linewidth]{Thuc_Hanh/Image/USBC.png}
+    \caption{Khối ngõ vào USB-C với chuỗi bảo vệ nhiều tầng}
+    \label{Hình 4.2}
+\end{figure}
+Điểm đáng chú ý nhất của khối này là chuỗi bảo vệ ngõ vào nhiều tầng, thể hiện tư duy thiết kế hướng tới độ bền công nghiệp. Tầng thứ nhất là cầu chì tự phục hồi (Polyfuse F1): khi dòng tải vượt ngưỡng do chập mạch, điện trở của polyfuse tăng vọt để ngắt dòng, và tự khôi phục khi sự cố được loại bỏ -- bảo vệ chống quá dòng mà không cần thay cầu chì. Tầng thứ hai là cuộn chặn nhiễu (Ferrite Bead FB1) mắc nối tiếp trên đường nguồn, có tác dụng như một bộ lọc thông thấp đối với nhiễu tần số cao đi vào từ cáp USB, ngăn nhiễu lan vào mạch nhạy cảm. Tầng thứ ba là điốt Schottky (D3, N5817) chống cắm ngược cực nguồn. Quan trọng nhất, tầng thứ tư là IC chống phóng tĩnh điện chuyên dụng USBLC6-2SC6 (U2) đặt sát đầu cắm, ghim các xung ESD biên độ hàng kilovolt xuống đất trước khi chúng kịp phá hủy các đường tín hiệu dữ liệu USB và nguồn.
+
+
+
+Điểm mạnh của thiết kế khối nguồn ngõ vào là độ an toàn cao, chống được hầu hết các sự cố điện thường gặp ngoài hiện trường (chập, cắm ngược, ESD, nhiễu). Điểm yếu là việc thêm nhiều linh kiện bảo vệ làm tăng chi phí và chiếm thêm diện tích mạch; tuy nhiên trong bối cảnh thiết bị phải hoạt động 24/7 trong môi trường chuồng trại ẩm ướt và nhiều nhiễu, sự đánh đổi này hoàn toàn xứng đáng.
+
+\subsubsection{Khối sạc pin và quản lý nguồn pin Li-ion}
+Trung tâm của khối là IC sạc tuyến tính TP4056 (U3, gói ESOP8 có tản nhiệt đáy), chuyên dụng cho pin Lithium một cell. TP4056 thực thi thuật toán sạc hai giai đoạn dòng không đổi / áp không đổi (CC/CV) như đã phân tích ở Chương 3: dòng sạc được lập trình qua điện trở $R_{PROG}$ (R13) theo công thức $I_{CHG} = 1200/R_{PROG}$, và quá trình sạc tự kết thúc khi điện áp pin đạt $4{,}2\,\text{V}$ và dòng sụt xuống dưới ngưỡng. Hai đèn LED chỉ thị (D7 BLUE cho trạng thái đang sạc CHRG, và đường STDBY báo sạc đầy) cung cấp phản hồi trực quan cho người vận hành.
+
+Một linh kiện quan trọng đi kèm là MOSFET kênh P AO3401A (Q1) đặt trên đường dẫn nguồn hệ thống V\_SYS. Linh kiện này thực hiện chức năng định tuyến nguồn và chống dòng ngược (ideal-diode / power-path): khi có nguồn USB, hệ thống được cấp điện từ USB đồng thời sạc pin; khi rút USB, MOSFET dẫn để pin cấp điện cho tải, đồng thời ngăn dòng chảy ngược từ pin về cổng USB.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.65\linewidth]{Thuc_Hanh/Image/BatteryCharger.png}
+    \caption{Khối sạc pin Li-ion dùng TP4056 và MOSFET định tuyến nguồn AO3401A}
+    \label{Hình 4.3}
+\end{figure}
+
+Khối sạc trong Hình \ref{Hình 4.3} có ưu điểm là tích hợp đầy đủ, giá thành thấp và dễ kiểm soát; thuật toán CC/CV bảo vệ tốt tuổi thọ pin. Điểm yếu cố hữu của IC sạc tuyến tính là tỏa nhiệt khi sạc dòng lớn (năng lượng dư biến thành nhiệt trên IC), do đó thiết kế phải chú ý diện tích đồng tản nhiệt dưới gói ESOP8. Lựa chọn TP4056 là hợp lý cho dòng sạc vừa phải và độ phức tạp thấp của một thiết bị một cell.
+
+\subsubsection{Khối ổn áp hạ áp LDO}
+Điện áp pin Li-ion biến thiên trong dải rộng từ $4{,}2\,\text{V}$ (đầy) xuống $3{,}0\,\text{V}$ (cạn), trong khi vi điều khiển, cảm biến và module LoRa đều yêu cầu một mức $3{,}3\,\text{V}$ ổn định. Khối ổn áp tuyến tính hạ áp (LDO) đảm nhiệm việc tạo ra điện áp phẳng này. Như đã luận giải kỹ ở Chương 3, đề tài lựa chọn IC LDO AP2112K-3.3 (U4) thay cho dòng AMS1117 phổ biến nhưng tốn điện. AP2112K dùng phần tử dẫn là MOSFET kênh P nên có điện áp rơi (dropout) cực thấp chỉ khoảng $250\,\text{mV}$ ở dòng tải $600\,\text{mA}$, và quan trọng hơn là dòng tĩnh ($I_Q$) chỉ vào khoảng $55\,\mu\text{A}$ \cite{diodes2015ap2112}. Điện áp rơi thấp đồng nghĩa với việc hệ thống vẫn duy trì được $3{,}3\,\text{V}$ ngay cả khi pin đã xả xuống mức thấp, tận dụng tối đa dung lượng pin; còn dòng tĩnh thấp giúp giảm hao phí ở trạng thái chờ. Hai tụ điện $22\,\mu\text{F}$ (C2, C3) ở ngõ vào và ngõ ra bảo đảm tính ổn định của vòng hồi tiếp và lọc gợn sóng. Một đèn LED xanh (D2) báo hiệu nguồn $3{,}3\,\text{V}$ đã sẵn sàng. Thiết kế khối LDO được thể hiện trong Hình \ref{Hình 4.4}.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{Thuc_Hanh/Image/LDO.png}
+    \caption{Thiết kế khối LDO}
+    \label{Hình 4.4}
+\end{figure}
+Điểm mạnh của giải pháp LDO là đơn giản, không sinh nhiễu chuyển mạch (khác với nguồn switching), rất phù hợp cho mạch có khối vô tuyến nhạy nhiễu như LoRa. Điểm yếu là hiệu suất giảm khi chênh lệch áp vào -- ra lớn (năng lượng dư tỏa thành nhiệt); tuy nhiên với chênh lệch nhỏ giữa pin và $3{,}3\,\text{V}$, hiệu suất của AP2112K trong ứng dụng này là chấp nhận được.
+
+\subsubsection{Khối vi điều khiển trung tâm ESP32-S3 và mạch ngoại vi}
+Bộ xử lý trung tâm của Node là module ESP32-S3-WROOM-1 (U1) đã được biện luận lựa chọn ở Chương 3. Trong sơ đồ nguyên lý như Hình \ref{Hình 4.5}, ngoài bản thân module, khối này còn bao gồm các mạch ngoại vi thiết yếu để vi điều khiển hoạt động ổn định và nạp được firmware. Chân Enable (EN) được kéo lên $3{,}3\,\text{V}$ qua điện trở $10\,\text{k}\Omega$ (R10) kết hợp tụ $1\,\mu\text{F}$ (C4) tạo thành mạch reset nguồn (power-on reset) bảo đảm chip khởi động sạch; nút nhấn RESET (SW1) cho phép khởi động lại thủ công. Nút BOOT (SW3) nối chân GPIO0 cho phép đưa chip vào chế độ nạp firmware. Các tụ lọc nguồn $100\,\text{nF}$ và $10\,\mu\text{F}$ (C5, C6) đặt sát chân nguồn module để khử nhiễu cao tần và ổn định điện áp khi dòng tải biến động đột ngột (decoupling).
+
+Để phục vụ nạp và gỡ lỗi, một đầu cắm lập trình (J1, Conn\_02x03) đưa ra các đường UART (TXD0/RXD0) và các tín hiệu điều khiển nạp. Ngoài ra, một nút nhấn người dùng USER\_SW (SW2, qua chân có điện trở kéo lên R11 và bảo vệ ESD D6) được bố trí để phục vụ các thao tác tương tác tại chỗ như hiệu chỉnh hoặc kích hoạt chế độ kiểm thử. Mỗi nút nhấn và đường tín hiệu nhạy cảm đều được gắn điốt bảo vệ ESD (các linh kiện ESD9B3.3ST5G), thể hiện sự nhất quán trong triết lý thiết kế chống chịu môi trường khắc nghiệt.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{Thuc_Hanh/Image/ESP32_Core.png}
+    \caption{Module ESP32-S3-WROOM-1}
+    \label{Hình 4.5}
+\end{figure}
+
+Điểm mạnh của khối xử lý là năng lực tính toán lõi kép mạnh mẽ, bộ nhớ dồi dào, tích hợp sẵn bộ tăng tốc mã hóa và USB gốc, cùng hệ sinh thái phần mềm ESP-IDF trưởng thành. Điểm cần lưu ý là module có khá nhiều chân và mức tiêu thụ ở trạng thái hoạt động không nhỏ, đòi hỏi thiết kế nguồn và bố trí chân cẩn thận; tuy nhiên các khả năng tiết kiệm điện ở chế độ ngủ sâu bù đắp tốt cho điều này.
+
+\subsubsection{Khối cảm biến, bus I2C và khối thời gian thực}
+Ba cảm biến vi khí hậu SHT31, BMP180 và BH1750 cùng IC thời gian thực DS3231 được mắc trên bus I2C dùng chung, với các điện trở kéo lên $4{,}7\,\text{k}\Omega$ (R16, R17) như trong Hình \ref{fig:ch4_sensor}. 
+\begin{figure}[H]
+    \centering
+    {\includegraphics[width=0.9\linewidth]{Thuc_Hanh/Image/Sensor.png}}
+    \caption{Sơ đồ nguyên lý khối cảm biến và bus I2C dùng chung của Node}
+    \label{fig:ch4_sensor}
+\end{figure}
+Mỗi cảm biến được đưa ra một đầu nối riêng (các đầu nối J14--J19 dạng Conn\_01x05 và Conn\_01x04, J12/J13 dạng Conn\_01x06 cho RTC) cho phép tháo lắp linh hoạt, thuận tiện cho việc thay thế hoặc bố trí cảm biến ở các vị trí khác nhau trong vỏ hộp. Cách đưa cảm biến ra đầu nối thay vì hàn cứng trên bo là một quyết định thực dụng: nó cho phép đặt cảm biến ánh sáng hướng ra ngoài, cảm biến nhiệt -- ẩm ở vị trí thông thoáng, đồng thời dễ thay khi cảm biến hỏng.
+
+Hai cảm biến khí tương tự MQ-135 (đo $NH_3$, đầu nối J9) và CH4 (đầu nối J11) đưa tín hiệu điện áp về các chân ADC của ESP32-S3; cảm biến CO2 giao tiếp số qua UART (đầu nối J7/J8). Bên cạnh đó, bo mạch còn trang bị một đầu nối QWIIC tiêu chuẩn (J4) với các điện trở kéo lên $2{,}2\,\text{k}\Omega$ (R7, R8) tuân theo quy ước màu dây của hệ sinh thái QWIIC (GND đen, VCC đỏ, SDA xanh dương, SCL vàng), cho phép cắm nóng (hot-plug) thêm các cảm biến I2C mở rộng trong tương lai mà không cần sửa mạch -- một thiết kế hướng tới khả năng mở rộng.
+
+
+
+Điểm mạnh của thiết kế khối cảm biến là tính module hóa và khả năng mở rộng cao, cùng việc tách bạch giao tiếp số (I2C, UART) và tương tự (ADC) theo đúng đặc tính từng cảm biến. Điểm yếu là việc dùng nhiều đầu nối làm tăng số điểm tiếp xúc cơ khí -- nơi tiềm ẩn rủi ro tiếp xúc kém trong môi trường rung động và ẩm; điều này được khắc phục một phần bằng việc phủ keo chống ẩm sau khi lắp ráp.
+
+\subsubsection{Khối truyền thông vô tuyến LoRa}
+Module LoRa SX1278 được kết nối với ESP32-S3 qua giao diện SPI cùng các chân điều khiển RESET và ngắt DIO0, thông qua các đầu cắm J3/J10 (Conn\_01x08) như trong Hình \ref{fig:ch4_lora}. Việc bố trí LoRa dưới dạng module cắm rời (thay vì hàn chip SX1278 trực tiếp lên bo) là một lựa chọn cân nhắc giữa độ phức tạp thiết kế và tính linh hoạt: module rời đã được nhà sản xuất phối hợp trở kháng và kiểm định sẵn phần cao tần, giúp giảm rủi ro thiết kế RF -- vốn là phần khó nhất của một bo mạch vô tuyến -- đồng thời cho phép thay đổi module hoặc băng tần dễ dàng. Đường tín hiệu SPI được giữ ngắn và tránh chạy song song với các đường nhiễu để bảo toàn tính toàn vẹn tín hiệu ở tốc độ cao.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{Thuc_Hanh/Image/LoraPCB.png}
+    \caption{Module thu phát vô tuyến LoRa kết nối qua SPI và chân ngắt DIO0}
+    \label{fig:ch4_lora}
+\end{figure}
+
+Điểm mạnh là độ tin cậy cao của phần RF và tính linh hoạt khi nâng cấp; điểm yếu là đầu cắm module làm tăng chiều cao tổng thể và một điểm tiếp xúc cơ khí nữa cần được cố định chắc chắn.
+
+\subsubsection{Khối chấp hành và chỉ thị trạng thái}
+Khối chấp hành gồm ba kênh điều khiển Act1, Act2, Act3 (các đầu nối J20, J21, J22 dạng Conn\_01x03) đưa tín hiệu mức logic ra các rơ-le bên ngoài như trong Hình \ref{fig:ch4_act}). 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.3\linewidth]{Thuc_Hanh/Image/Actuator.png}
+    \caption{Chân điều khiển cho khối Actuators}
+    \label{fig:ch4_act}
+\end{figure}
+Việc dùng ba đầu nối ba chân (tín hiệu, nguồn, đất) cho phép cấp nguồn và điều khiển module rơ-le ngoài một cách gọn gàng. Thiết kế tách ba kênh độc lập, như đã nêu ở Chương 3, cho phép FSM điều khiển riêng rẽ quạt hút, phun sương và đèn sưởi.
+
+Về chỉ thị trạng thái, ngoài các LED nguồn và LED sạc, bo mạch tích hợp một đèn LED RGB (D1, CLV1L-FKB) điều khiển qua ba chân GPIO (R\_LED, G\_LED, B\_LED) qua các điện trở hạn dòng $1\,\text{k}\Omega$ như trong Hình \ref{fig:ch4_led}.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{Thuc_Hanh/Image/Led.png}
+    \caption{Khối đèn báo hiệu trạng thái}
+    \label{fig:ch4_led}
+\end{figure}
+Đèn RGB cho phép mã hóa nhiều trạng thái hệ thống bằng màu sắc (ví dụ: xanh = an toàn, vàng = cảnh báo, đỏ = khẩn cấp, nhấp nháy = đang truyền), cung cấp một kênh phản hồi trực quan giàu thông tin ngay tại hiện trường mà không cần thiết bị phụ trợ.
+
+\subsubsection{Thiết kế và quy hoạch mạch in (PCB Layout)}
+Sau khi hoàn thiện sơ đồ nguyên lý, toàn bộ linh kiện được quy hoạch lên một bo mạch in hai lớp (2-layer FR4) với kích thước khoảng $78 \times 80\,\text{mm}$. Quá trình layout  phải tuân thủ nghiêm ngặt các nguyên tắc về tính toàn vẹn tín hiệu và tương thích điện từ (EMI/EMC).
+
+Nguyên tắc quan trọng nhất được áp dụng là thiết lập vùng cấm đồng (Keep-out Zone) tại khu vực ăng-ten của module ESP32-S3 và module LoRa. Khu vực này tuyệt đối không phủ lớp đồng nền (ground pour) và không cho đường mạch nào chạy qua, nhằm tránh hiện tượng phản xạ và hấp thụ năng lượng cao tần làm suy giảm hiệu suất phát xạ và độ nhạy thu của ăng-ten. Thứ hai, các đường nguồn được vẽ rộng để giảm sụt áp và trở kháng, trong khi một mặt phẳng đất (ground plane) liền mạch ở lớp dưới đóng vai trò vừa là đường về dòng điện trở kháng thấp vừa là lớp chắn nhiễu. Thứ ba, các tụ lọc nguồn (decoupling) được đặt sát chân nguồn của các IC để khử nhiễu hiệu quả nhất. Thứ tư, khối nguồn công suất (sạc, LDO) được bố trí tách biệt khỏi khối tín hiệu nhạy cảm và khối cao tần để hạn chế nhiễu chéo (cross-talk). Cuối cùng, các lỗ bắt vít (H1--H5) ở các góc bảo đảm cố định cơ học chắc chắn bo mạch vào vỏ hộp. 
+
+\textbf{Bước 1 -- Phân khu mạch và quy hoạch tầng (Floorplanning).} Bo mạch được chia thành bốn khu vực chức năng với biên giới vật lý rõ ràng, đặt theo dòng năng lượng từ \emph{cao} sang \emph{thấp} và theo độ nhạy nhiễu từ \emph{nhỏ} sang \emph{lớn}. Khu vực \emph{nguồn vào -- sạc -- LDO} đặt ở mép trái bo, nơi cổng USB-C dễ tiếp cận và xa nhất các đường tín hiệu nhạy cảm. Khu vực \emph{vi điều khiển ESP32-S3 và mạch ngoại vi số} đặt ở trung tâm, giữa hai khu vực còn lại. Khu vực \emph{cảm biến và bus I2C} đặt phía dưới, hướng ra các đầu nối ngoại vi. Cuối cùng, khu vực \emph{vô tuyến LoRa và ăng-ten} bố trí ở mép phải, đối diện hoàn toàn với khu vực nguồn để tránh nhiễu từ trường biến thiên của các tụ điện công suất cảm ứng vào đường thu tín hiệu. Cách phân khu này thực hiện đúng nguyên tắc \emph{phân vùng và che chắn} của Ott: bốn khu vực được phân tách bằng các dải đồng nối đất rộng tối thiểu 2 mm, kết hợp các via stitching mật độ cao ($\lambda/20$ ở 433 MHz tương đương khoảng cách 35 mm, nên đặt via stitching mỗi 2--3 mm là dư an toàn).
+
+\textbf{Bước 2 -- Thiết lập số lớp và stack-up.} Bo sử dụng nền FR-4 tiêu chuẩn dày 1{,}6 mm, hai lớp đồng phủ 1 oz (35 $\mu$m). Lớp Top chứa toàn bộ linh kiện SMD và phần lớn đường tín hiệu, lớp Bottom chủ yếu là mặt phẳng đất liền mạch (Continuous Ground Plane) cùng một số đường tín hiệu phụ. Quyết định không dùng nguồn ở lớp Bottom mà gộp với đất là một đánh đổi có chủ đích cho bo hai lớp: nó giúp mọi đường tín hiệu trên lớp Top luôn có một đường về dòng điện trở kháng thấp ngay phía dưới (return path), một yêu cầu sống còn cho tính toàn vẹn tín hiệu \cite{johnson1993high}. Trở kháng đặc tính của một dải vi mạch (microstrip) trên cấu hình này được ước lượng theo công thức Hammerstad cải biên \cite{hammerstad1975}:
+\begin{equation}
+    Z_0 = \frac{87}{\sqrt{\varepsilon_r+1{,}41}}\cdot \ln\!\left(\frac{5{,}98h}{0{,}8w + t}\right),
+\end{equation}
+với $\varepsilon_r \approx 4{,}3$ cho FR-4, $h=1{,}6$ mm (chiều dày substrate), $t=35\,\mu$m. Giải nghịch cho $Z_0=50\,\Omega$ thu được bề rộng đường dẫn $w \approx 2{,}9$ mm -- đây là bề rộng áp dụng cho đoạn dẫn RF từ module LoRa SX1278 đến đầu nối ăng-ten SMA, đảm bảo trở kháng phối hợp và năng lượng RF không bị phản xạ ngược về chip.
+
+\textbf{Bước 3 -- Bố trí linh kiện (Placement).} Trong từng khu chức năng, các linh kiện được đặt theo nguyên tắc \emph{ngắn nhất tốt nhất} cho các đường mang dòng lớn hoặc tín hiệu nhạy. Cụ thể:
+
+\textit{Khối nguồn:} cổng USB-C J2 đặt sát mép bo, cầu chì F1 và ferrite bead FB1 nối tiếp ngay sau, kế đến IC bảo vệ ESD USBLC6-2SC6 (U2) đặt cách chân USB tối đa 5 mm để dập xung ESD trước khi chúng đi sâu vào mạch. IC sạc TP4056 (U3) bố trí trên trục đường cấp pin, với pad tản nhiệt (Exposed Pad) ESOP8 nối xuống một vùng đồng tản nhiệt $20\times15$ mm gồm nhiều via thermal $\Phi 0{,}3$ mm (cho phép dòng sạc 1 A tỏa nhiệt mà không nâng nhiệt độ tiếp giáp $T_J$ vượt giới hạn). LDO AP2112K (U4) đặt sát chân $V_{IN}$ của module ESP32-S3 để rút ngắn đường $3{,}3$ V cấp nguồn.
+
+\textit{Khối vi điều khiển:} module ESP32-S3-WROOM-1 (U1) đặt ở trung tâm, ăng-ten PCB tích hợp trên module hướng ra mép trên của bo (không phục vụ kết nối Wi-Fi/BLE trong dự án này nhưng vẫn cần giữ thông thoáng). Nút BOOT (SW3), nút RESET (SW1), nút USER (SW2) và đầu cắm nạp J1 cụm lại ở một góc dễ thao tác. Đèn LED RGB (D1) đặt nơi nổi bật để dễ quan sát trạng thái.
+
+\textit{Khối cảm biến và đầu nối:} các đầu nối J14--J19, J9, J11, J7/J8 (cho SHT31, BMP180, BH1750, MQ-135, CH4, CO2) đặt dọc theo mép dưới của bo, cho phép cảm biến cắm theo nhiều hướng tùy nhu cầu lắp vào vỏ hộp. Đầu cắm QWIIC J4 đặt mép phải, gần ESP32-S3 để bus I2C mở rộng có chiều dài tối thiểu.
+
+\textit{Khối LoRa và ăng-ten:} đầu cắm module LoRa J3/J10 đặt ở mép phải, sát ăng-ten ngoài (J4 SMA). Đoạn dẫn từ chân ANT của module đến đầu cắm SMA giữ thẳng, không bẻ góc vuông (chỉ dùng các bend 45$^\circ$ hoặc cong tròn), tránh phản xạ điện từ tại các góc nhọn.
+
+\textbf{Bước 4 -- Thiết lập lớp và phủ đồng.} Lớp Top phủ ground pour ở những vùng trống không có tín hiệu, được kết nối xuống ground plane lớp Bottom qua các via $\Phi 0{,}3$ mm rải dày (stitching). Mật độ via stitching được tính theo công thức bước sóng vận hành: ở 433 MHz, bước sóng trong môi trường $\lambda = c/f \approx 692$ mm; bước sóng dẫn (guided wavelength) trên FR-4 với $\varepsilon_{eff}\approx 3{,}0$ là $\lambda_g \approx 400$ mm. Để dải đồng phủ không trở thành ăng-ten ký sinh, khoảng cách giữa hai via stitching phải nhỏ hơn $\lambda_g/20 \approx 20$ mm; bo của đề tài đặt via stitching mỗi 5--8 mm, dư biên an toàn 2--4 lần. Riêng khu vực dưới ăng-ten LoRa (vùng cấm đồng), cả lớp Top và lớp Bottom đều \emph{không phủ đồng và không có via} trong một hình chữ nhật $15 \times 25$ mm; điều này ngăn ăng-ten bị suy hao do phản xạ kim loại lưng và bảo toàn vùng Fresnel cận trường.
+
+\textbf{Bước 5 -- Đi dây tín hiệu (Routing).} Việc đi dây tuân theo bốn quy tắc phân loại theo loại tín hiệu:
+
+\emph{Đường nguồn} (V\_USB, V\_BAT, V\_SYS, 3V3, GND): bề rộng tối thiểu được tính theo bảng IPC-2152 \cite{ipc2152}, công thức nội suy cho lớp ngoài:
+\begin{equation}
+\label{eq:trace_width}
+    I = k\cdot \Delta T^{0{,}44}\cdot A^{0{,}725},
+\end{equation}
+với $I$ là dòng cho phép (A), $\Delta T$ nhiệt độ tăng so với môi trường ($^\circ$C), $A$ tiết diện đồng (mils$^2$), $k=0{,}048$ cho lớp ngoài. Với mục tiêu $I=1$ A, $\Delta T = 10\,^\circ$C: giải ra $A \approx 21$ mils$^2$, tương ứng bề rộng $w \approx 21/(0{,}035\cdot 1{,}378) \approx 15$ mils $\approx 0{,}38$ mm. Để có biên an toàn 3--4 lần, các đường $V\_SYS$ và đường về GND chính được đi rộng 1{,}5--2 mm.
+
+\emph{Đường tín hiệu số tốc độ cao} (SPI: SCK, MOSI, MISO, NSS; UART nạp): bề rộng 0{,}2--0{,}25 mm, đặt sát ground plane bên dưới (giữ trở kháng đặc tính ổn định khoảng 50--65 $\Omega$). Tránh để hai đường SPI chạy song song quá dài (giữ chiều dài song song dưới 10 mm) để giảm cross-talk; nếu cần chạy song song dài, chèn một đường GND \emph{guard trace} ở giữa. Khoảng cách giữa các đường SPI tuân theo quy tắc \emph{3W}: cạnh đến cạnh $\ge 3$ lần bề rộng đường, đủ để giảm hệ số ghép cảm $k<0{,}05$ ở tốc độ 1--10 MHz.
+
+\emph{Đường I2C}: bus chia sẻ với điện trở kéo lên $4{,}7\,\text{k}\Omega$ (R16, R17). Tổng điện dung bus được giới hạn dưới 400 pF theo NXP I2C Specification \cite{nxp2014i2c}; với khoảng năm cảm biến nối qua dây jumper, ước tính tổng điện dung $C_{bus}\approx 200$ pF (50 pF cho 0{,}5 m dây + linh kiện), thời hằng nạp $\tau=R\cdot C=4{,}7\text{k}\Omega \cdot 200$ pF $=0{,}94\,\mu$s, hoàn toàn thỏa mãn yêu cầu thời gian sườn lên ($\le 1\,\mu$s) ở chế độ Standard 100 kHz và còn biên ở Fast 400 kHz. Bus SDA và SCL được đi cạnh nhau (vì cùng pha logic, cross-talk không gây lỗi), chiều dài giữ dưới 30 mm trên bo để giảm điện dung phụ.
+
+\emph{Đường tương tự} (ngõ ra MQ-135 và CH4 đi vào ADC của ESP32-S3): tách biệt khỏi các đường số chuyển mạch nhanh, đi qua một bộ lọc thấp tần đơn giản RC (1 k$\Omega$ + 100 nF, $f_c \approx 1{,}6$ kHz) đặt sát chân ADC để chống nhiễu coupling từ Wi-Fi/BLE. Nếu phải vượt qua đường số, chuyển sang đi vuông góc (90$^\circ$) chứ không song song, để giảm ghép từ.
+
+\emph{Đường cao tần (RF)}: chỉ một đoạn duy nhất từ chân ANT module LoRa sang đầu cắm SMA. Đoạn này dài $\sim$ 18 mm, bề rộng 2{,}9 mm (đảm bảo $Z_0=50\,\Omega$ như tính ở bước 2), không có via xuyên lớp, đi hoàn toàn trên lớp Top trên một vùng đồng đất đầy đủ ở lớp Bottom (microstrip line).
+
+\textbf{Bước 6 -- Đặt tụ lọc và mạch decoupling.} Mỗi chân nguồn của mọi IC đều được kèm một cặp tụ \emph{bulk + bypass}: tụ tantal hoặc gốm $10\,\mu$F (lưu trữ năng lượng ngắn hạn) đặt cách chân nguồn dưới 5 mm, kết hợp tụ gốm $100$ nF (chống nhiễu tần cao) đặt sát chân nguồn dưới 2 mm. Module ESP32-S3 thêm một tụ $22\,\mu$F do đặc tính dòng đỉnh cao khi Wi-Fi (chưa dùng nhưng được dự phòng cho mở rộng) phát xung. Tụ decoupling đặt sai vị trí (cách chân quá xa) làm vô hiệu hóa toàn bộ tác dụng: tổng cảm kháng đường dẫn $L_{trace}+L_{via}$ ở tần số GHz vượt trở kháng tụ và biến mạch decoupling thành mạch dao động. Đặt sát + via ngắn xuống GND là quy tắc bất di bất dịch.
+
+\textbf{Bước 7 -- Kiểm tra DRC (Design Rule Check) và soi bo ảo.} Sau khi hoàn thiện routing, công cụ Altium thực hiện DRC tự động với bộ quy tắc: khoảng cách giữa hai đường $\ge 0{,}2$ mm, kích cỡ via tối thiểu $\Phi 0{,}3/\Phi 0{,}6$ mm, không đường nào đi cắt qua mặt phẳng đất bị xé (split plane), không vùng đồng cô lập (orphan copper). Sau khi DRC sạch, bo được mô phỏng 3D để kiểm tra giao thoa cơ học với các đầu cắm cảm biến và vỏ hộp.
+
+Kết nối đi dây và layout của Node được thể hiện trong Hình \ref{Hình 4.10}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{Thuc_Hanh/Image/Layout.png}
+    \caption{PCB Layout của thiết bị Node}
+    \label{Hình 4.10}
+\end{figure}
+
+Bảng \ref{Bảng 4.1} tổng hợp các linh kiện chính của thiết bị Node theo từng khối chức năng, đóng vai trò như một bảng kê vật tư (BOM) rút gọn.
+
+\begin{table}[H]
+\centering
+\caption{Tổng hợp linh kiện chính của thiết bị Node theo khối chức năng}
+\label{Bảng 4.1}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{p{5.0cm} p{5.0cm} p{5.6cm}}
+\hline
+\textbf{Khối chức năng} & \textbf{Linh kiện chính} & \textbf{Vai trò} \\ \hline
+Ngõ vào nguồn & USB-C J2, Polyfuse, FB1, USBLC6-2SC6 & Cấp nguồn + bảo vệ quá dòng/ESD/nhiễu \\
+Sạc, quản lý pin & TP4056, AO3401A & Sạc, nhận nguồn pin/USB \\
+Ổn áp & AP2112K-3.3, tụ 22$\mu$F & Tạo nguồn 3,3V \\
+Vi điều khiển & ESP32-S3-WROOM-1 & Xử lý trung tâm, FreeRTOS \\
+Cảm biến vi khí hậu & SHT31, BMP180, BH1750 & Đo nhiệt-ẩm, áp suất, ánh sáng \\
+Cảm biến khí & MQ-135, CH4, CO2 & Đo $NH_3$, $CH_4$ (ADC), $CO_2$  \\
+Thời gian thực & DS3231 & Nhãn thời gian chống Replay \\
+Vô tuyến & Module LoRa SX1278 & Truyền thông tầm xa (SPI) \\
+Chấp hành, chỉ thị & Act1-3, LED RGB & Điều khiển rơ-le, báo status \\ \hline
+\end{tabular}
+\end{table}
+
+\lstset{
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\bfseries,
+    breaklines=true,
+    frame=single,
+    captionpos=b,
+    columns=fullflexible,
+    showstringspaces=false
+}
+
+\subsection{Triển khai phần mềm hệ thống}
+Nếu phần cứng là thể xác thì phần mềm chính là linh hồn của thiết bị Điện toán biên. Phần này trình bày chi tiết quá trình hiện thực hóa toàn bộ firmware cho Node, firmware cho Gateway, lớp tích hợp đám mây và công cụ kiểm thử. Do triết lý "tập trung trí tuệ tại Node", phần lớn nội dung tập trung vào firmware Node -- nơi diễn ra việc thu thập, lọc, ra quyết định, mã hóa, truyền tin và quản lý năng lượng.
+
+\subsubsection{Môi trường phát triển và tổ chức mã nguồn}
+Toàn bộ firmware được phát triển trên nền tảng ESP-IDF phiên bản 6.0 -- bộ công cụ phát triển chính thức của Espressif dành cho dòng chip ESP32, tích hợp sẵn nhân FreeRTOS, các trình điều khiển ngoại vi, ngăn xếp mạng và thư viện mật mã. So với việc lập trình trên nền Arduino, ESP-IDF cho phép kiểm soát ở mức thấp các tài nguyên hệ thống.
+\begin{table}[H]
+\centering
+\caption{Tổ chức các module mã nguồn chính của firmware Node}
+\label{Bảng 4.2}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{p{4.0cm} p{11.0cm}}
+\hline
+\textbf{Module} & \textbf{Vai trò} \\ \hline
+\texttt{main.c} & Khởi tạo hệ thống, tạo các tác vụ FreeRTOS, vòng đời chu kỳ \\ 
+\texttt{sht3x, bmp180, bh1750} & Driver các cảm biến vi khí hậu trên bus I2C \\ 
+\texttt{filters.c/.h} & Thư viện bộ lọc số (EMA, MA, Median, Kalman) \\ 
+\texttt{packet.c/.h} & Định nghĩa cấu trúc gói tin, đóng/mở gói \\
+\texttt{crypto.c/.h} & Lớp mã hóa AEAD trừu tượng (AES-128-GCM / ASCON) \\ 
+\texttt{ascon.c/.h} & Hiện thực thuật toán mật mã hạng nhẹ ASCON-128 \\
+\texttt{sx127x.c/.h} & Driver điều khiển module LoRa SX1278 qua SPI \\ 
+\texttt{rtos\_stats.c/.h} & Thu thập thống kê RTOS: tải CPU mỗi lõi, High-Water Mark Stack từng tác vụ \\ 
+\texttt{mem\_monitor.c/.h} & Giám sát Heap động qua \texttt{heap\_caps}, phát hiện rò rỉ và phân mảnh \\ 
+\texttt{power\_mgr.c/.h} & Cấu hình \texttt{esp\_pm} (DFS), Tickless Idle và Light/Deep Sleep \\ 
+\texttt{board\_pins.h} & Khai báo tập trung bản đồ chân (pin-map) \\ \hline
+\end{tabular}
+\end{table}
+Hệ thống phần mềm được chia thành ba dự án tách biệt: firmware Node (thư mục \texttt{NodeSensor}), firmware Gateway (thư mục \texttt{LoraGateway}) và công cụ kiểm thử trên máy tính (thư mục \texttt{HIL\_Tool}). Bảng \ref{Bảng 4.2} liệt kê các module mã nguồn chính của firmware Node cùng vai trò của chúng, cho thấy sự phân tách trách nhiệm rõ ràng trong kiến trúc phần mềm.
+
+
+
+\subsubsection{Triển khai lớp driver cảm biến}
+Lớp driver là cầu nối giữa phần mềm và phần cứng cảm biến, và là nơi đầu tiên dữ liệu thô được sinh ra -- do đó chất lượng của nó quyết định độ tin cậy của mọi xử lý phía sau. Driver cảm biến cũng phải xử lý các đặc thù riêng của từng linh kiện. Cơ chế thu dữ liệu cảm biến của Node được thể hiện trong Hình \ref{Hình 4.11}.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\linewidth]{Thuc_Hanh/Image/DriverSensor.pdf}
+    \caption{Cơ chế đọc dữ liệu của node}
+    \label{Hình 4.11}
+\end{figure}
+Hình \ref{Hình 4.11} mô tả quy trình xử lý của bộ điều khiển trung tâm theo mô hình Finite State Machine (FSM) nhằm xác định trạng thái hoạt động của hệ thống giám sát môi trường và điều khiển các thiết bị chấp hành. Quy trình được chia thành ba phần chính gồm Input, Processing và Output, giúp thể hiện rõ luồng dữ liệu từ khi nhận tín hiệu đầu vào đến khi đưa ra quyết định điều khiển.
+
+Ở giai đoạn Input, hệ thống lần lượt nhận các thông số môi trường bao gồm nhiệt độ (Temperature), độ ẩm (Humidity), nồng độ khí NH₃, cùng với trạng thái hiện tại (Current State) của hệ thống. Các dữ liệu này được truyền sang khối xử lý để đánh giá điều kiện môi trường. Trước tiên, bộ điều khiển tiến hành tính toán chỉ số THI (Temperature Humidity Index) từ giá trị nhiệt độ và độ ẩm nhằm đánh giá mức độ ảnh hưởng của điều kiện nhiệt đến môi trường chăn nuôi. Sau khi có giá trị THI, hệ thống đồng thời thực hiện ba bước kiểm tra gồm Check Temperature, Check NH3 và Check THI. Mỗi phép kiểm tra sẽ so sánh giá trị đo được với các ngưỡng đã được thiết lập trước để xác định mức độ an toàn của môi trường.
+
+Kết quả từ các phép kiểm tra được tổng hợp để đánh giá xem hệ thống có rơi vào trạng thái Emergency hay không. Nếu bất kỳ thông số nào vượt quá ngưỡng nguy hiểm, hệ thống sẽ chuyển sang State = EMERGENCY, đồng thời kích hoạt toàn bộ thiết bị làm mát và xử lý môi trường, cụ thể là quạt và hệ thống phun sương (Fan + Mist ON) nhằm nhanh chóng đưa điều kiện môi trường trở về mức an toàn. Trong trường hợp chưa đạt mức khẩn cấp, hệ thống tiếp tục đánh giá điều kiện Warning. Nếu các thông số chỉ vượt ngưỡng cảnh báo nhưng chưa đến mức nguy hiểm, FSM chuyển sang State = WARNING, khi đó chỉ kích hoạt quạt ở tốc độ thấp (Low-Speed Fan ON) nhằm giảm tiêu thụ năng lượng nhưng vẫn cải thiện điều kiện môi trường.
+
+
+Sau khi xác định trạng thái cuối cùng, tất cả các nhánh xử lý được hợp nhất và chuyển sang phần Output. Tại đây, hệ thống cập nhật Updated State để lưu trạng thái hoạt động mới, đồng thời sinh ra Relay Commands nhằm điều khiển các relay đóng hoặc ngắt tương ứng với quạt, bơm phun sương và các thiết bị khác. Cấu trúc FSM này giúp việc điều khiển trở nên rõ ràng, dễ mở rộng và đảm bảo hệ thống phản ứng nhanh với các biến động của môi trường trong khi vẫn duy trì tính ổn định nhờ cơ chế hysteresis.
+
+Đoạn mã \ref{lst:probe1} minh họa cơ chế dò và đọc cảm biến với xử lý lỗi mềm. 
+\begin{lstlisting}[language=C, caption={Cơ chế dò và đọc cảm biến với xử lý lỗi mềm}, label={lst:probe1}]
+typedef struct {
+    bool   present;        // ket qua auto-probe
+    float  value;          // gia tri da chuyen doi
+    bool   valid;          // CRC/ham doc thanh cong
+} sensor_reading_t;
+
+void sensors_read_all(node_data_t *d) {
+    if (sht31.present)
+        d->th_ok  = sht3x_read(&d->temp, &d->hum);   // co kiem CRC
+    if (bmp180.present)
+        d->p_ok   = bmp180_read(&d->press);          // bu nhiet
+    if (bh1750.present)
+        d->lux_ok = bh1750_read(&d->lux);
+    d->nh3 = adc_to_ppm(adc_read(MQ135_CH));         // cam bien khi
+    // ... cam bien khong san sang -> danh dau invalid, KHONG treo
+}
+\end{lstlisting}
+Với SHT31, mỗi cặp byte dữ liệu trả về kèm một byte CRC, được driver kiểm tra ngay để loại các khung lỗi do nhiễu bus. Với BMP180, 11 hệ số hiệu chỉnh được đọc \emph{một lần} lúc khởi tạo bằng một giao dịch đọc liên tục (burst read) 22 byte -- một bài học rút ra trong quá trình phát triển, bởi việc đọc rời từng hệ số dễ gây lệch dữ liệu và cho ra giá trị nhiệt độ sai lệch hàng trăm độ. Với các cảm biến khí tương tự (MQ-135, CH4), driver đọc giá trị qua bộ ADC của ESP32-S3 và quy đổi sang nồng độ theo đường đặc tuyến; còn cảm biến CO2 được đọc qua giao tiếp UART. 
+
+% \begin{lstlisting}[language=C, caption={Cơ chế dò và đọc cảm biến với xử lý lỗi mềm}, label={lst:probe}]
+% typedef struct {
+%     bool   present;        // ket qua auto-probe
+%     float  value;          // gia tri da chuyen doi
+%     bool   valid;          // CRC/ham doc thanh cong
+% } sensor_reading_t;
+
+% void sensors_read_all(node_data_t *d) {
+%     if (sht31.present)
+%         d->th_ok  = sht3x_read(&d->temp, &d->hum);   // co kiem CRC
+%     if (bmp180.present)
+%         d->p_ok   = bmp180_read(&d->press);          // bu nhiet
+%     if (bh1750.present)
+%         d->lux_ok = bh1750_read(&d->lux);
+%     d->nh3 = adc_to_ppm(adc_read(MQ135_CH));         // cam bien khi
+%     // ... cam bien khong san sang -> danh dau invalid, KHONG treo
+% }
+% \end{lstlisting}
+
+\subsubsection{Triển khai thư viện bộ lọc theo từng tín hiệu}
+Thư viện \texttt{filters.c} hiện thực bốn loại bộ lọc (EMA, trung bình trượt, trung vị, Kalman 1D) sau một giao diện thống nhất gồm ba hàm: \texttt{filter\_init} khởi tạo trạng thái, \texttt{filter\_apply} đưa một mẫu mới vào và trả về giá trị đã lọc, \texttt{filter\_name} trả về tên bộ lọc phục vụ ghi log. Cấu hình mặc định gán EMA cho nhiệt độ và độ ẩm, trung bình trượt cho áp suất, và trung vị cho ánh sáng.
+
+Một chi tiết triển khai quan trọng là trạng thái của mỗi bộ lọc được lưu trong vùng nhớ RTC (thuộc tính \texttt{RTC\_DATA\_ATTR}) để không bị xóa khi vi điều khiển vào chế độ ngủ sâu và reset. Nhờ vậy, bộ lọc duy trì được tính liên tục theo thời gian thực qua các chu kỳ ngủ.
+
+\subsubsection{Triển khai máy trạng thái điều khiển biên và khối chấp hành}
+Cơ chế hoạt động FSM được thể hiện trong Hình \ref{Hình 4.12}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{Thuc_Hanh/Image/FSM_Process.pdf}
+    \caption{Cơ chế hoạt động của FSM trên Node}
+    \label{Hình 4.12}
+\end{figure}
+% Tại mỗi chu kỳ, sau khi có dữ liệu đã lọc, FSM tính chỉ số nhiệt ẩm THI rồi đối chiếu đồng thời nhiệt độ, độ ẩm, nồng độ $NH_3$ và THI với ma trận ngưỡng đã thiết lập (Bảng \ref{Bảng 3.6}). Kết quả là việc chuyển trạng thái giữa ba mức AN TOÀN -- CẢNH BÁO -- KHẨN CẤP, kèm theo việc điều khiển các kênh chấp hành Act1--Act3.
+Sơ đồ trên mô tả quy trình thu thập dữ liệu từ các cảm biến, gồm ba phần Input, Processing và Output. Ban đầu, hệ thống thực hiện tự động dò tìm (Auto-probe) để xác định các cảm biến đang kết nối, bao gồm SHT31, BMP180, BH1750 và MQ135. Việc dò tìm này giúp chương trình có thể hoạt động ngay cả khi một số cảm biến không được lắp đặt hoặc gặp lỗi.
+.
+Sau khi hoàn tất việc đọc dữ liệu, toàn bộ thông tin được tổng hợp vào cấu trúc node\_ddata\_t, bao gồm các giá trị nhiệt độ, độ ẩm, áp suất, cường độ ánh sáng và nồng độ NH₃, đồng thời lưu các cờ hợp lệ (Validity flags) cho từng cảm biến. Dữ liệu này sau đó được chuyển tới các khối xử lý phía trên như thuật toán tính THI, FSM và hệ thống truyền thông, bảo đảm tính tin cậy và khả năng mở rộng của toàn bộ hệ thống.
+
+Để tránh hiện tượng rơ-le đóng/cắt liên tục khi giá trị đo dao động sát ngưỡng (chattering), FSM cài đặt cơ chế trễ (hysteresis): ngưỡng để chuyển lên trạng thái nguy hiểm hơn cao hơn ngưỡng để hạ xuống trạng thái an toàn hơn một khoảng nhất định. Điều này bảo vệ tuổi thọ cơ học của rơ-le và tránh gây sốc cho thiết bị cơ điện. Toàn bộ chuỗi từ lúc đọc cảm biến vượt ngưỡng đến khi chân GPIO đóng mạch rơ-le được đo và bảo đảm hoàn tất dưới 50 ms -- chỉ tiêu tới hạn của hệ thống. Đoạn mã \ref{lst:fsm} minh họa lõi logic của FSM.
+
+\begin{lstlisting}[language=C, caption={Lõi logic máy trạng thái điều khiển biên}, label={lst:fsm}]
+edge_state_t fsm_update(node_data_t *d, edge_state_t cur) {
+    float thi = 0.8f*d->temp + (d->hum/100.0f)*(d->temp - 14.4f) + 46.4f;
+    if (d->temp > 35.0f || d->nh3 > 25.0f || thi > 78.0f) {
+        actuator_set(ACT_ALL, ON);     // bat toan bo quat + phun suong
+        return STATE_EMERGENCY;
+    } else if (d->temp > 32.0f || d->nh3 > 20.0f || thi > 72.0f) {
+        actuator_set(ACT_FAN_LOW, ON); // canh bao: quat muc thap
+        return STATE_WARNING;
+    } else if (cur != STATE_SAFE && below_hysteresis(d)) {
+        actuator_set(ACT_ALL, OFF);
+        return STATE_SAFE;
+    }
+    return cur;                         // giu trang thai (chong chattering)
+}
+\end{lstlisting}
+
+\subsubsection{Triển khai đóng gói và mã hóa dữ liệu (AEAD)}
+Trước khi truyền qua môi trường vô tuyến mở, dữ liệu phải được đóng gói và mã hóa, cấu trúc gói tin được trình bày trong Hình \ref{Hình 4.13}. Firmware định nghĩa cấu trúc gói tin gồm hai phần: phần tiêu đề (header) ở dạng bản rõ chứa các trường định danh (magic nhận dạng giao thức, phiên bản, mã thuật toán mã hóa, mã định danh Node, độ dài tải trọng và một số ngẫu nhiên nonce), và phần tải trọng (payload) chứa dữ liệu cảm biến cùng nhãn thời gian. Header để ở dạng bản rõ vì Gateway cần đọc được mã định danh và thuật toán \emph{trước khi} giải mã; tuy nhiên header vẫn được đưa vào quá trình xác thực dưới dạng dữ liệu liên kết (Associated Data), nên mọi sửa đổi header đều bị phát hiện.
+
+Điểm nổi bật của đề tài là hiện thực \emph{hai} thuật toán mã hóa có xác thực (AEAD) có thể lựa chọn: AES-128 ở chế độ GCM và ASCON-128. Chế độ GCM mở rộng thuật toán AES-128 (đã phân tích cấu trúc toán học ở Chương 2) bằng cách bổ sung một thẻ xác thực (authentication tag) 16 byte, qua đó vừa bảo mật nội dung vừa bảo đảm tính toàn vẹn -- chống lại cả nghe lén lẫn giả mạo \cite{mcgrew2004galois}. Trên ESP32-S3, AES-128-GCM được hiện thực thông qua giao diện mật mã PSA Crypto của ESP-IDF v6, tận dụng bộ tăng tốc mã hóa phần cứng nên thời gian thực thi rất nhỏ. ASCON-128 -- thuật toán thắng cuộc thi mật mã hạng nhẹ của Viện NIST \cite{dobraunig2021ascon, turan2023lightweight} -- được hiện thực bằng phần mềm thuần, tối ưu cho thiết bị tài nguyên hạn chế với trạng thái nhỏ và không cần bảng tra lớn. Việc cung cấp cả hai cho phép đối chứng trực tiếp giữa một thuật toán tiêu chuẩn được tăng tốc phần cứng và một thuật toán hạng nhẹ chạy phần mềm (sẽ so sánh định lượng ở Chương 5). Cả hai được gói sau một giao diện trừu tượng chung, định tuyến theo trường mã thuật toán trong header, nên phần nghiệp vụ chỉ cần chọn thuật toán qua một hằng số cấu hình.
+
+% ===================================================================
+% PlantUML cho Hình 4.8 - render và luu thanh: Thuc_Hanh/Image/Ch4_Packet.png
+% @startuml
+% skinparam backgroundColor white
+% rectangle "HEADER (ban ro = AAD)\nmagic | ver | algo | node_id | plen | nonce[16]" as H
+% rectangle "PAYLOAD (ma hoa)\nT,H,P,Lux,NH3,CH4,CO2 | THI | trang thai | timestamp" as P
+% rectangle "TAG[16]\n(xac thuc AEAD)" as T
+% H -right-> P
+% P -right-> T
+% note bottom of H : Header KHONG ma hoa nhung\nDUOC bao ve toan ven qua AAD
+% @enduml
+% ===================================================================
+\begin{figure}[H]
+    \centering
+    {\includegraphics[width=0.7\linewidth]{Thuc_Hanh/Image/AHEAD_Package.pdf}}
+    \caption{Cấu trúc gói tin AEAD: header (AAD) + payload mã hóa + thẻ xác thực}
+    \label{Hình 4.13}
+\end{figure}
+
+Tích hợp cùng cơ chế mã hóa là giao thức chống tấn công phát lại dựa trên nhãn thời gian. Mỗi gói tin mang một nhãn thời gian lấy từ RTC DS3231; phía Gateway sau khi giải mã sẽ so sánh nhãn thời gian này với đồng hồ của nó, và chỉ chấp nhận gói nếu độ lệch nằm trong cửa sổ an toàn $\Delta t < 5\,\text{s}$. Nhờ thẻ xác thực AEAD, kẻ tấn công không thể sửa nhãn thời gian mà không làm hỏng thẻ, nên mọi gói phát lại đều mang nhãn thời gian cũ và bị loại bỏ. Sự kết hợp giữa mã hóa AEAD và nhãn thời gian tạo nên một lớp bảo vệ hoàn chỉnh về cả ba mặt: bảo mật, toàn vẹn và tính mới của dữ liệu.
+
+\subsubsection{Triển khai truyền thông LoRa và cơ chế xác nhận (ACK)}
+Driver LoRa (\texttt{sx127x.c}) điều khiển module SX1278 qua SPI để cấu hình các thanh ghi (tần số, hệ số trải phổ, băng thông, công suất phát), ghi gói vào bộ đệm FIFO và phát đi, cũng như chuyển sang chế độ thu để nhận. Một bài học triển khai quan trọng là vòng chờ phát/thu không được dùng vòng lặp bận chiếm CPU; thay vào đó firmware dựa vào ngắt phần cứng DIO0 (báo sự kiện TxDone/RxDone) kết hợp với bộ định thời \texttt{esp\_timer} để áp đặt thời hạn (timeout) theo thời gian tuyệt đối. Cách này vừa giải phóng CPU cho các tác vụ khác trong lúc chờ vô tuyến, vừa tránh được lỗi treo CPU do cấu hình nhịp hệ thống không phù hợp.
+
+Sau khi phát gói, Node không coi như đã hoàn tất mà chờ một gói xác nhận (ACK) từ Gateway, biến liên kết một chiều thành một cái bắt tay hai chiều. Gói ACK là một khung ngắn có mã kiểm tra CRC8, mang về trạng thái xử lý của Gateway, các chỉ số RSSI/SNR mà Gateway đo được trên đường lên, và mốc thời gian hiện tại của Gateway. Hàm \texttt{send\_with\_ack} quản lý toàn bộ chu trình: phát gói, chuyển sang thu, chờ ACK trong một khoảng thời gian định trước; nếu hết thời gian mà không có ACK hợp lệ, Node sẽ thử lại một số lần giới hạn, và nếu vẫn thất bại thì kết luận mất kết nối để kích hoạt cơ chế lưu trữ ngoại tuyến. Toàn bộ chuỗi gửi -- chờ -- thử lại được thiết kế để gói gọn trong vài giây nhằm tôn trọng ngân sách thời gian của một chu kỳ.
+
+Từ cơ chế ACK, firmware khai thác thêm ba thông tin giá trị. Thứ nhất là độ trễ khứ hồi (Round-Trip Time -- RTT): Node ghi mốc thời gian bằng \texttt{esp\_timer} ngay trước khi phát và ngay khi nhận ACK, hiệu hai mốc là RTT -- một chỉ số phản ánh sức khỏe đường truyền. Thứ hai là ước lượng khoảng cách tới Gateway từ giá trị RSSI của gói ACK, dựa trên mô hình suy hao đường truyền log-distance:
+\begin{equation}
+    {d = 10^{\frac{RSSI_{1m} - RSSI}{10\,n}}}.
+\end{equation}
+Trong đó $RSSI_{1m}$ là cường độ tham chiếu đo ở cự ly 1 m và $n$ là hệ số suy hao môi trường. Thứ ba là khả năng đồng bộ thời gian: mốc thời gian trong ACK cho phép Node hiệu chỉnh đồng hồ, bổ trợ cho RTC phần cứng. Bảng \ref{Bảng 4.3} tổng hợp các tham số cấu hình lớp vật lý LoRa được sử dụng, đồng nhất giữa Node và Gateway.
+
+\begin{table}[H]
+\centering
+\caption{Tham số cấu hình lớp vật lý LoRa của hệ thống}
+\label{Bảng 4.3}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{p{4.2cm} p{3.2cm} p{5.4cm}}
+\hline
+\textbf{Tham số} & \textbf{Giá trị} & \textbf{Ý nghĩa} \\ \hline
+Tần số sóng mang & 433 MHz & Băng ISM, xuyên vật cản tốt \\ 
+Spreading Factor (SF) & 7 -- 9 & Cân bằng tầm xa và thời gian phát \\ 
+Băng thông (BW) & 125 kHz & Tiêu chuẩn cho ứng dụng tầm xa \\ 
+Coding Rate (CR) & 4/5 & Sửa lỗi tiến, ít tốn airtime \\ 
+Công suất phát & 17 dBm & Tầm xa trong giới hạn cho phép \\ 
+Sync word & 0x12 & Mạng riêng (khác LoRaWAN) \\ \hline
+\end{tabular}
+\end{table}
+
+\subsubsection{Triển khai quản lý năng lượng và cơ chế ngủ lai (Hybrid Sleep)}
+Quản lý năng lượng là yếu tố quyết định tuổi thọ pin của Node. Firmware hiện thực một mô hình Hybrid Sleep kết hợp hai chế độ ngủ của ESP32-S3 tùy theo ngữ cảnh hoạt động như trong Hình \ref{Hình 4.14}
+\begin{figure}[H]
+    \centering
+    {\includegraphics[width=0.7\linewidth]{Thuc_Hanh/Image/SleepFSM.pdf}}
+    \caption{Máy trạng thái quản lý năng lượng theo mô hình Hydrid Sleep}
+    \label{Hình 4.14}
+\end{figure}
+Ở điều kiện bình thường khi đã gửi dữ liệu thành công và không còn dữ liệu tồn đọng, Node vào chế độ ngủ sâu (Deep Sleep) -- cắt nguồn lõi CPU và RAM, chỉ giữ lại bộ định thời RTC, hạ dòng tiêu thụ của vi điều khiển xuống mức vài $\mu A$. Ngược lại, khi đang trong trạng thái buffer dữ liệu ngoại tuyến hoặc cần phản ứng nhanh, Node dùng chế độ ngủ nhẹ (Light Sleep) -- giữ nguyên RAM và trạng thái RTOS, cho phép thức dậy nhanh mà không mất dữ liệu trong bộ đệm.
+
+Thách thức lớn nhất của Deep Sleep là chip bị reset hoàn toàn mỗi khi thức dậy, làm mất sạch biến trong RAM thường. Firmware giải quyết bằng cách khai báo các biến trạng thái cốt lõi với thuộc tính \texttt{RTC\_DATA\_ATTR} để chúng nằm trong vùng RTC RAM không bị xóa qua Deep Sleep: bộ đếm số lần khởi động, số lần watchdog can thiệp, tổng số gói gửi và số ACK nhận được, chuỗi mất kết nối liên tiếp, số thứ tự gói, mốc thời gian cơ sở và trạng thái các bộ lọc. Nhờ vậy, dù chip reset mỗi chu kỳ, Node vẫn duy trì được tính liên tục về mặt logic nghiệp vụ. Việc thức dậy được kích hoạt theo hai nguồn song song -- bộ định thời (lấy mẫu định kỳ) hoặc sự kiện ngắt ngoài qua chân DIO0/SQW (phản ứng khẩn cấp), đúng tinh thần "ngủ định kỳ kết hợp thức theo sự kiện" đã nêu trong phạm vi đề tài ở Chương 1.
+
+% ===================================================================
+% PlantUML cho Hình 4.9 - render va luu thanh: Thuc_Hanh/Image/Ch4_SleepFSM.png
+% @startuml
+% skinparam backgroundColor white
+% [*] --> ACTIVE
+% state ACTIVE : Doc-Loc-FSM-Ma hoa-Gui
+% state LIGHT_SLEEP : Giu RAM+RTOS\n(khi co buffer offline)
+% state DEEP_SLEEP : Cat CPU/RAM\n(khi online, buffer rong)
+% ACTIVE --> DEEP_SLEEP : gui thanh cong & buffer rong
+% ACTIVE --> LIGHT_SLEEP : dang buffer / cho dong bo
+% DEEP_SLEEP --> ACTIVE : timer RTC / ngat DIO0
+% LIGHT_SLEEP --> ACTIVE : timer / ngat
+% @enduml
+% ===================================================================
+
+
+Cần lưu ý một điểm trung thực về mặt kỹ thuật: do thiết kế chấp nhận cấp nguồn liên tục cho mảng cảm biến khí MOX (để giữ cân bằng nhiệt), dòng tiêu thụ tổng của Node ở trạng thái chờ bị chi phối bởi cuộn nung của cảm biến khí chứ không phải bởi vi điều khiển. Vì vậy, chỉ tiêu dòng ngủ sâu mức vài $\mu A$ áp dụng cho riêng phần vi điều khiển; phần này sẽ được làm rõ và định lượng trong chương kiểm thử như một điểm đánh đổi đã được cân nhắc.
+
+\subsubsection{Triển khai lưu trữ ngoại tuyến và cơ chế store-and-forward}
+Cơ chế lưu trữ và phục hồi dữ liệu khi ngoại tuyến được thể hiện trong Hình \ref{Hình 4.15}
+\begin{figure}[H]
+    \centering
+    {\includegraphics[width=0.55\linewidth]{Thuc_Hanh/Image/t.pdf}}
+    \caption{Logic chức năng lưu trữ ngoại tuyến}
+    \label{Hình 4.15}
+\end{figure}
+
+Để hiện thực tính kiên cường trước sự cố mất kết nối, firmware xây dựng cơ chế lưu trữ ngoại tuyến (offline storage) theo mô hình lưu-và-chuyển-tiếp (store-and-forward). Khi hàm \texttt{send\_with\_ack} kết luận mất kết nối (không nhận được ACK sau số lần thử quy định), thay vì vứt bỏ dữ liệu, Node sẽ ghi bản ghi hiện tại -- kèm nhãn thời gian thực từ RTC -- vào vùng lưu trữ cục bộ. Hai cơ chế lưu trữ được phối hợp: một bộ đệm vòng (ring buffer) trong RTC RAM cho các bản ghi gần nhất (sống sót qua Deep Sleep), và hệ thống tập tin SPIFFS trên bộ nhớ Flash cho lưu trữ dung lượng lớn và bền vững. Bộ đệm vòng hoạt động theo nguyên tắc FIFO và tự loại bỏ bản ghi cũ nhất khi đầy (drop-oldest), bảo đảm luôn giữ được dữ liệu mới nhất ngay cả khi mất kết nối kéo dài.
+
+Ngay khi liên kết vô tuyến được khôi phục (nhận lại được ACK), một tác vụ đồng bộ chạy nền ở mức ưu tiên thấp sẽ lần lượt đọc các bản ghi tồn đọng và gửi gối đầu (backlog) về Gateway, khôi phục tính toàn vẹn của chuỗi dữ liệu lịch sử. Việc đính kèm nhãn thời gian thực vào mỗi bản ghi là điều kiện tiên quyết để dữ liệu ngoại tuyến vẫn có giá trị khi được gửi lại sau này -- người dùng có thể tái dựng chính xác diễn biến vi khí hậu trong khoảng thời gian mất mạng.
+
+
+\subsubsection{Triển khai cơ chế giám sát Watchdog và tự phục hồi}
+Vì hệ thống phải hoạt động liên tục 24/7 ngoài thực địa không người trực, khả năng tự phục hồi khi gặp sự cố phần mềm là bắt buộc. Firmware kích hoạt bộ định thời giám sát tác vụ (Task Watchdog Timer) của ESP-IDF cho tác vụ chính: trong điều kiện bình thường, tác vụ phải định kỳ "vỗ về" (feed) watchdog; nếu tác vụ bị treo (ví dụ do bus I2C bị khóa hoặc vòng lặp vô hạn) và không feed kịp trong thời hạn cấu hình, watchdog sẽ kích hoạt reset toàn hệ thống, đưa thiết bị trở lại trạng thái hoạt động sạch. Sau mỗi lần reset, firmware đọc nguyên nhân reset (\texttt{esp\_reset\_reason}) và tăng bộ đếm số lần watchdog can thiệp lưu trong RTC RAM, đồng thời báo cáo trong telemetry -- cung cấp bằng chứng định lượng về độ ổn định của hệ thống.
+
+Để có thể kiểm chứng cơ chế này một cách an toàn và lặp lại được, phần cứng dành riêng một chân (GPIO0, nối nút BOOT) làm chân kích hoạt kiểm thử: khi người kiểm thử nối chân này xuống đất, firmware chủ động đi vào một vòng lặp treo giả lập, qua đó buộc watchdog phải can thiệp -- cho phép quan sát và đo đạc thời gian phục hồi.
+
+% --- Bổ sung phần RTOS ---
+\subsubsection{Triển khai bảo vệ bus I2C và giám sát tài nguyên RTOS}
+Hiện thực cụ thể cho cơ chế Mutex bảo vệ bus I2C đã thiết kế ở Chương 3 được trình bày trong Đoạn mã \ref{lst:i2c_mutex}. Một Mutex duy nhất được tạo lúc khởi tạo; mọi giao dịch I2C đều được bao bọc giữa cặp \texttt{xSemaphoreTake}/\texttt{xSemaphoreGive} với thời hạn chờ hữu hạn để không bao giờ treo cứng tác vụ.
+
+\begin{lstlisting}[language=C, caption={Bảo vệ giao dịch I2C bằng Mutex có kế thừa ưu tiên}, label={lst:i2c_mutex}]
+static SemaphoreHandle_t i2c_mutex;        // bao ve bus I2C dung chung
+
+void i2c_guard_init(void) {
+    // Mutex (khac Binary Semaphore): co ownership + ke thua uu tien
+    i2c_mutex = xSemaphoreCreateMutex();
+}
+
+// Doc cam bien I2C an toan: ca giao dich la mot vung toi han nguyen tu
+esp_err_t sht3x_read_safe(float *t, float *h) {
+    // Cho Mutex toi da 100ms; neu khong duoc -> bo qua chu ky, KHONG treo
+    if (xSemaphoreTake(i2c_mutex, pdMS_TO_TICKS(100)) != pdTRUE)
+        return ESP_ERR_TIMEOUT;            // bus ket/treo -> danh dau invalid
+    esp_err_t r = sht3x_read(t, h);        // START..addr..data..STOP
+    xSemaphoreGive(i2c_mutex);             // tra Mutex ngay sau STOP
+    return r;
+}
+\end{lstlisting}
+
+Để biến các mục tiêu tối ưu RTOS ở Chương 1 thành số liệu kiểm chứng được, firmware tích hợp một tác vụ chẩn đoán chạy nền (module \texttt{rtos\_stats} và \texttt{mem\_monitor}) định kỳ in ra hai nhóm chỉ số then chốt: mức dùng đỉnh Stack của từng tác vụ và dung lượng Heap còn trống. Hàm \texttt{uxTaskGetStackHighWaterMark()} trả về lượng Stack còn trống \emph{ít nhất} mà mỗi tác vụ từng chạm tới -- nếu giá trị này tiến gần 0 nghĩa là nguy cơ tràn Stack; ngược lại nếu quá lớn thì đang lãng phí RAM và có thể giảm cấp phát. Với Heap, hiệu giữa \texttt{heap\_caps\_get\_free\_size()} và \texttt{heap\_caps\_get\_largest\_free\_block()} cho biết mức độ phân mảnh. Đoạn mã \ref{lst:rtos_diag} minh họa cách thu thập các chỉ số này và phát qua \texttt{ESP\_LOGI} (đồng thời đính kèm vào telemetry JSON gửi cho công cụ EdgeProfiler).
+
+\begin{lstlisting}[language=C, caption={Giám sát Stack High-Water Mark và Heap động}, label={lst:rtos_diag}]
+// Theo doi Stack tung tac vu (don vi: word; 1 word = 4 byte tren ESP32-S3)
+void rtos_log_stack(TaskHandle_t h, const char *name) {
+    UBaseType_t hwm = uxTaskGetStackHighWaterMark(h);
+    ESP_LOGI("RTOS", "%s: stack free min = %u words", name, (unsigned)hwm);
+}
+
+// Giam sat Heap noi: tong trong + khoi lien ke lon nhat -> do phan manh
+void mem_log_heap(void) {
+    size_t freeb   = heap_caps_get_free_size(MALLOC_CAP_INTERNAL);
+    size_t largest = heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL);
+    float  frag    = 100.0f * (1.0f - (float)largest / (float)freeb);
+    ESP_LOGI("MEM", "heap free=%u B, largest=%u B, frag=%.1f%%",
+             (unsigned)freeb, (unsigned)largest, frag);
+}
+\end{lstlisting}
+
+Cuối cùng, để hiện thực mục tiêu tiết kiệm năng lượng ở mức hệ điều hành, module \texttt{power\_mgr} cấu hình bộ quản lý năng lượng \texttt{esp\_pm} \cite{espressif_pm} kết hợp cơ chế Tickless Idle của FreeRTOS (Đoạn mã \ref{lst:power_pm}). Khi bật \texttt{light\_sleep\_enable}, mỗi khi tất cả các tác vụ đều ở trạng thái Bị chặn, nhân FreeRTOS sẽ \emph{bỏ qua} các ngắt Tick định kỳ và tự động đưa chip vào Light Sleep cho đến sự kiện thức kế tiếp, thay vì thức dậy 1000 lần mỗi giây một cách vô ích; đồng thời cơ chế Điều chỉnh tần số động (DFS) hạ xung nhịp CPU khi tải thấp. Việc bật cơ chế này yêu cầu khai báo \texttt{CONFIG\_PM\_ENABLE=y} và \texttt{CONFIG\_FREERTOS\_USE\_TICKLESS\_IDLE=y} trong \texttt{sdkconfig}.
+
+\begin{lstlisting}[language=C, caption={Cấu hình esp\_pm với DFS và Tickless Idle (Automatic Light Sleep)}, label={lst:power_pm}]
+#include "esp_pm.h"
+void power_mgr_init(void) {
+    esp_pm_config_t pm = {
+        .max_freq_mhz = 240,           // xung dinh khi Active (hieu nang)
+        .min_freq_mhz = 40,            // ha xung khi tai thap (DFS)
+        .light_sleep_enable = true     // Tickless Idle: tu dong Light Sleep
+    };
+    ESP_ERROR_CHECK(esp_pm_configure(&pm));
+}
+\end{lstlisting}
+% --- Hết bổ sung phần RTOS ---
+
+\subsubsection{Triển khai công cụ kiểm thử Hardware-In-the-Loop (EdgeProfiler)}
+Một đóng góp công cụ quan trọng của đề tài là phần mềm kiểm thử Hardware-In-the-Loop mang tên EdgeProfiler, được xây dựng bằng ngôn ngữ Python với thư viện giao diện PyQt5 và thư viện vẽ đồ thị thời gian thực pyqtgraph. Công cụ này hiện thực hóa phương pháp đo lường định lượng đã nêu ở Chương 1, cho phép quan trắc và kiểm thử hệ thống một cách trực quan và tự động. Điểm thiết kế cốt lõi của công cụ là khả năng giám sát Node một cách \emph{độc lập}: vì Node tự phát ra toàn bộ trạng thái của mình dưới dạng telemetry JSON qua cổng USB, người dùng chỉ cần cắm Node vào máy tính là theo dõi được mọi hoạt động, không phụ thuộc vào việc Gateway có hiện diện hay không.
+
+Công cụ EdgeProfiler cung cấp các nhóm chức năng chính: hiển thị đồ thị thời gian thực các đại lượng cảm biến (cả giá trị thô lẫn giá trị đã lọc để so sánh hiệu quả bộ lọc), các chỉ số chất lượng đường truyền (RSSI, SNR, RTT, tỉ lệ giao gói thành công PDR, khoảng cách ước lượng), trình giám sát tài nguyên và profiler FreeRTOS (tải CPU theo từng lõi, dung lượng heap, trạng thái từng tác vụ), bộ chạy kịch bản kiểm thử tự động (test sequencer), chức năng ghi và phát lại phiên làm việc, cũng như xuất báo cáo ra các định dạng HTML, Excel. Toàn bộ công cụ được đóng gói thành tệp thực thi độc lập bằng PyInstaller để dễ phân phối và sử dụng.
+
+% ===================================================================
+% PlantUML cho Hinh 4.12 - render va luu thanh: Thuc_Hanh/Image/Ch4_HIL.png
+% @startuml
+% skinparam backgroundColor white
+% [Node] --> [Cong USB Serial] : telemetry JSON
+% [Gateway] ..> [Cong USB Serial] : telemetry JSON
+% [Cong USB Serial] --> [SerialWorker (QThread)]
+% [SerialWorker (QThread)] --> [Bo dinh tuyen du lieu]
+% [Bo dinh tuyen du lieu] --> [Do thi thoi gian thuc]
+% [Bo dinh tuyen du lieu] --> [RTOS Profiler / CPU]
+% [Bo dinh tuyen du lieu] --> [Test Sequencer]
+% [Bo dinh tuyen du lieu] --> [Ghi/Phat lai .eplog]
+% [Test Sequencer] --> [Xuat bao cao HTML/Excel]
+% @enduml
+% ===================================================================
+% \begin{figure}[H]
+%     \centering
+%     \IfFileExists{Thuc_Hanh/Image/Ch4_HIL_GUI.png}{\includegraphics[width=0.95\linewidth]{Thuc_Hanh/Image/Ch4_HIL_GUI.png}}{\fbox{\parbox[c][4cm][c]{0.88\linewidth}{\centering\itshape (Chèn ảnh) Ảnh chụp giao diện công cụ EdgeProfiler (đồ thị thời gian thực, profiler RTOS, test sequencer) --- lưu thành \texttt{Ch4\_HIL\_GUI.png}}}}
+%     \caption{Giao diện công cụ kiểm thử Hardware-In-the-Loop EdgeProfiler}
+%     \label{fig:ch4_hil}
+% \end{figure}
+
+
+Việc tự xây dựng một công cụ kiểm thử chuyên biệt thay vì dùng phần mềm theo dõi cổng nối tiếp thông thường mang lại lợi ích lớn: nó cho phép tự động hóa hàng loạt kịch bản kiểm thử, thu thập và thống kê hàng ngàn mẫu dữ liệu, đồng thời trực quan hóa tức thời các chỉ số mà nếu đọc bằng mắt từ log thô sẽ rất khó nhận biết. Đây chính là nền tảng cho toàn bộ quá trình đánh giá và kiểm thử định lượng ở Chương 5.
+
+\subsection{Triển khai thuật toán và giao thức cập nhật OTA trên môi trường ESP-IDF}
+
+\subsubsection{Hiện thực hóa quá trình tương tác hệ thống (System Interaction)}
+Quá trình nâng cấp phần mềm từ xa là một chuỗi tương tác phức tạp mang tính phi đồng bộ giữa 3 thực thể chính: Trạm trung tâm (Gateway), Hệ thống vi điều khiển biên (Edge Node), và Máy chủ lưu trữ nhị phân (HTTP File Server). Để mô tả chính xác sự trao đổi dữ liệu, trình tự thời gian và sự kiện phần cứng, đồ án sử dụng Biểu đồ Tuần tự UML (UML Sequence Diagram) được thiết kế chuyên biệt tại Hình \ref{fig:ota_sequence}.
+
+\begin{figure}[H]
+\centering
+\resizebox{\textwidth}{!}{
+\begin{tikzpicture}[
+    >=stealth, font=\small,
+    % Lifelines style
+    lifeline/.style={thick, dashed, draw=gray},
+    actor/.style={rectangle, draw, thick, fill=gray!10, minimum width=2.5cm, minimum height=0.8cm, align=center},
+    msg/.style={->, thick},
+    msg_return/.style={<-, thick, dashed}
+]
+
+% ================= CÁC THỰC THỂ (ACTORS) =================
+\node[actor] (gw) at (0,0) {\textbf{LoRa Gateway}};
+\node[actor] (lora_task) at (4,0) {\textbf{Node: Task\_LoRa}};
+\node[actor] (ota_task) at (8,0) {\textbf{Node: Task\_OTA}};
+\node[actor] (server) at (12,0) {\textbf{HTTP Server}};
+
+% Lifelines (Trục thời gian)
+\draw[lifeline] (gw) -- (0,-9);
+\draw[lifeline] (lora_task) -- (4,-9);
+\draw[lifeline] (ota_task) -- (8,-9);
+\draw[lifeline] (server) -- (12,-9);
+
+% ================= QUÁ TRÌNH TRUYỀN THÔNG =================
+% 1. Kích hoạt
+\draw[msg] (0,-1) -- node[above] {1. Downlink: OTA\_FLAG + URL} (4,-1);
+\node[left] at (0,-1) {\textit{Trigger}};
+
+% 2. Đánh thức OTA Task
+\draw[msg] (4,-2) -- node[above] {2. Give Semaphore} (8,-2);
+\draw[msg] (8,-2.5) -- node[right] {3. \texttt{vTaskSuspend(Sensors)}} (8,-2.5); % Self loop ảo
+
+% 3. Khởi tạo mạng
+\draw[msg] (8,-3.5) -- node[above] {4. Bật Wi-Fi (RF Enable)} (8,-3.5); % Self loop
+\draw[msg] (8,-4.5) -- node[above] {5. TCP/TLS Handshake} (12,-4.5);
+
+% 4. Quá trình tải
+\draw[msg] (8,-5.5) -- node[above] {6. HTTP GET \texttt{/fw\_v2.bin}} (12,-5.5);
+\draw[msg_return] (8,-6.2) -- node[above] {7. HTTP 200 OK + Stream Chunks} (12,-6.2);
+
+% 5. Ghi flash và xác thực
+\node[rectangle, draw, fill=yellow!10, text width=2.5cm, align=center] at (8,-7.6) {8. Ghi Flash \& \\ Hash SHA-256};
+
+% 6. Khởi động lại
+\draw[msg](flash.south) (8,-8.8) -- node[below] {9. \texttt{esp\_restart()}} (8,-9.5);
+
+\end{tikzpicture}
+}
+\caption{Biểu đồ tuần tự (UML Sequence Diagram) mô tả tiến trình tương tác giữa các luồng phần mềm và máy chủ trong chế độ Hybrid OTA}
+\label{fig:ota_sequence}
+\end{figure}
+
+Biểu đồ tại Hình \ref{fig:ota_sequence} thể hiện rõ tính bảo mật được lồng ghép ở bước số 5 (TCP/TLS Handshake). Đồ án không sử dụng HTTP thông thường (cổng 80) mà cấu hình API \texttt{esp\_http\_client} để giao tiếp qua HTTPS (cổng 443). Chứng chỉ số dạng Public Key Infrastructure (PKI) của máy chủ được mã hóa và nhúng cứng (embedded) vào vùng dữ liệu `.rodata` của hệ điều hành ESP32-S3 bằng CMake. Nếu máy chủ cung cấp firmware không sở hữu chứng chỉ hợp lệ, tiến trình Handshake sẽ bị Node cảm biến từ chối ngay lập tức, ngăn chặn triệt để các cuộc tấn công Man-In-The-Middle (MITM) nhắm vào cơ sở hạ tầng nông nghiệp.
+
+\subsubsection{Cấu hình API lõi và Quản lý vòng đời cập nhật}
+Khối mã cốt lõi thực thi việc tải và nạp phần mềm được xây dựng bao bọc quanh thư viện \texttt{esp\_https\_ota.h}. Sự khác biệt chuyên sâu của việc phát triển trên ESP-IDF (so với Arduino Core) nằm ở khả năng kiểm soát từng con trỏ luồng dữ liệu (Stream Buffer). Thay vì phải tải toàn bộ tệp tin nhị phân lớn vào bộ nhớ Heap - vốn có thể gây ra lỗi \texttt{Out of Memory (OOM)} - API được cấu hình hoạt động ở chế độ theo hướng sự kiện (Event-driven) và phân mảnh khối (Chunked):
+
+\begin{enumerate}
+    \item \textbf{Khởi tạo (\texttt{esp\_ota\_begin}):} Hệ điều hành quét bảng phân vùng, phát hiện phân vùng ứng dụng đang không hoạt động (Ví dụ: Đang chạy ở \texttt{APP0} thì sẽ chọn \texttt{APP1}). Sector của phân vùng này được xóa trắng (Erase) ở mức vật lý để chuẩn bị ghi.
+    \item \textbf{Ghi khối (\texttt{esp\_ota\_write}):} Vòng lặp HTTP nhận từng gói dữ liệu nhỏ (kích thước 2KB đến 4KB tùy thuộc vào cấu hình MTU của mạng Wi-Fi) và ghi liên tục vào Flash. Phương pháp này giữ cho mức tiêu thụ RAM tĩnh chỉ ở mức xấp xỉ 10 KB trong suốt toàn bộ quá trình tải tệp tin 1.5 MB.
+    \item \textbf{Chốt toàn vẹn (\texttt{esp\_ota\_end}):} Sau khi gói tin cuối cùng được nhận, hàm này kích hoạt khối phần cứng giải mã (Hardware Crypto Engine) của ESP32-S3. Nó thực hiện quét từ đầu đến cuối phân vùng vừa ghi để tạo ra một chuỗi băm SHA-256 nội bộ, sau đó so sánh trực tiếp với chuỗi băm được ký đính kèm trong tệp nhị phân gốc. Sự sai lệch của một bit duy nhất (do can nhiễu sóng RF) cũng sẽ khiến hàm trả về mã lỗi \texttt{ESP\_ERR\_OTA\_VALIDATE\_FAILED}, tiến trình bị hủy bảo toàn hệ thống.
+\end{enumerate}
+
+\subsubsection{Triển khai thuật toán máy trạng thái an toàn (Rollback State Machine)}
+Như đã phân tích ở thiết kế, việc chống treo máy sau OTA là yếu tố sống còn. Tại mức mã nguồn (Source Code), cơ chế này được vận hành dựa trên máy trạng thái cờ Boot của vi điều khiển, mô tả qua ba trạng thái sau:
+
+\begin{itemize}
+    \item \textbf{\texttt{ESP\_OTA\_IMG\_NEW}:} Firmware mới vừa được tải về và Flash xong, chưa từng được khởi động.
+    \item \textbf{\texttt{ESP\_OTA\_IMG\_PENDING\_VERIFY}:} Khi ESP32-S3 thực hiện ngắt khởi động \texttt{esp\_restart()}, Bootloader đổi trạng thái của Firmware mới thành PENDING. Ở trạng thái này, hệ điều hành được phép chạy, nhưng nó bị đưa vào diện "giám sát đặc biệt".
+    \item \textbf{\texttt{ESP\_OTA\_IMG\_VALID}:} Trạng thái thành công cuối cùng.
+\end{itemize}
+
+Trong mã lệnh ứng dụng (\texttt{app\_main}), việc chuyển từ \texttt{PENDING} sang \texttt{VALID} không được diễn ra tự động. Firmware phải tuần tự thực hiện: Khởi tạo bus I2C, khởi tạo thành công cảm biến MQ-135 và SHT31, ping thành công module LoRa SX1278. Chỉ khi toàn bộ ngoại vi phản hồi tốt, hàm \texttt{esp\_ota\_mark\_app\_valid\_cancel\_rollback()} mới được gọi. 
+
+Nếu bất kỳ ngoại vi nào bị treo do lỗi mã nguồn của bản cập nhật mới, hàm trên sẽ không được thực thi. Lúc này, bộ định thời Hardware Watchdog Timer (đã được nạp giá trị Timeout 5000ms) sẽ tràn và xả tín hiệu Reset. Tại lần Boot thứ 2, Bootloader nhìn thấy trạng thái vẫn là \texttt{PENDING\_VERIFY} nhưng thiết bị lại vừa bị Reset bất thường, nó tự động dán nhãn firmware này là \texttt{ESP\_OTA\_IMG\_INVALID} (Không hợp lệ) và ép con trỏ quay lại phân vùng chứa phiên bản phần mềm cũ. Đoạn mã hiện thực hóa logic này đóng vai trò như một hệ thống "tự miễn dịch" vững chắc cho mạng lưới IoT nông nghiệp trước các thảm họa từ lỗi kỹ sư phần mềm.
+
+\subsection{Kết luận chương}
+Chương 4 đã trình bày trọn vẹn quá trình hiện thực hóa hệ thống trên cả hai phương diện phần cứng và phần mềm. Về phần cứng, đề tài đã thiết kế và chế tạo một bo mạch Node tùy biến hai lớp tích hợp đầy đủ các khối: nguồn và bảo vệ ngõ vào USB-C, sạc và quản lý pin Li-ion, ổn áp LDO hiệu suất cao, vi điều khiển ESP32-S3, tổ hợp cảm biến vi khí hậu và khí độc, khối thời gian thực, module vô tuyến LoRa và khối chấp hành, tất cả được quy hoạch trên một bản mạch in tuân thủ các nguyên tắc chống nhiễu cao tần. Về phần mềm -- phần được đầu tư chiều sâu nhất -- đề tài đã xây dựng một firmware đa nhiệm hoàn chỉnh trên FreeRTOS, hiện thực đầy đủ chuỗi xử lý từ thu thập, lọc nhiễu, ra quyết định bằng máy trạng thái, mã hóa có xác thực với hai thuật toán tùy chọn, truyền thông LoRa có xác nhận, quản lý năng lượng bằng ngủ lai, lưu trữ ngoại tuyến và tự phục hồi bằng watchdog; đồng thời phát triển firmware Gateway, tích hợp đám mây Firebase và một công cụ kiểm thử Hardware-In-the-Loop chuyên dụng. Toàn bộ các thành phần này tạo nên một hệ thống hoàn chỉnh, sẵn sàng cho giai đoạn kiểm thử và đánh giá định lượng được trình bày trong Chương 5.

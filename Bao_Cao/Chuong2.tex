@@ -1,0 +1,637 @@
+
+
+\section*{CHƯƠNG 2. CƠ SỞ LÝ THUYẾT}
+\addcontentsline{toc}{section}{\numberline {} CHƯƠNG 2. CƠ SỞ LÝ THUYẾT}
+\setcounter{section}{2}
+\setcounter{subsection}{0}
+\setcounter{figure}{0}
+\setcounter{table}{0}
+
+Chương này tập trung hệ thống hóa các cơ sở lý thuyết cốt lõi phục vụ cho việc thiết kế hệ thống, bao gồm việc phân tích đặc điểm sinh học của đối tượng giám sát và làm rõ nguyên lý toán học của các công nghệ trọng yếu như truyền thông LoRa, giao thức IoT và kỹ thuật bảo mật dữ liệu
+
+\subsection{Tổng quan về Mạng cảm biến không dây và Vi khí hậu chuồng nuôi}
+\subsubsection{Cấu trúc và đặc điểm của Mạng cảm biến không dây (WSN)}
+Mạng cảm biến không dây (Wireless Sensor Network - WSN) là một hệ thống phân tán bao gồm hàng chục đến hàng ngàn thiết bị cảm biến nhỏ gọn (gọi là Node) được nhúng sâu vào môi trường cần giám sát. Trong bối cảnh nông nghiệp chính xác (Precision Agriculture), WSN đóng vai trò như hệ thần kinh ngoại biên, thu thập các thông số vật lý và hóa học để cung cấp dữ liệu đầu vào cho hệ thống ra quyết định.
+\begin{figure}[H]
+        \centering
+        \includegraphics[width=0.9\linewidth]{Thuc_Hanh/Image/WSN.png}
+        \caption{Kiến trúc Mạng cảm biến không dây (WSN)}
+        \label{Hình 2.1}
+    \end{figure}
+Kiến trúc hệ thống trong Hình \ref{Hình 2.1} được chia thành 4 lớp rõ rệt, đi từ cấp độ thiết bị hiện trường lên đến máy chủ trung tâm:
+\begin{itemize}
+    \item Lớp Thu thập dữ liệu: Đây là các thiết bị đầu cuối được phân bố rải rác trực tiếp tại các "Khu vực giám sát". Nhiệm vụ chính của chúng là đo đạc và thu thập thông số môi trường cục bộ. 
+    \item Lớp Quản lý cục bộ: Thay vì tất cả các nút đều cố gắng truyền dữ liệu đi xa, các nút cảm biến sẽ gửi dữ liệu tầm ngắn về một "Nút quản lý vùng" ở trung tâm cụm. Trạm quản lý này đóng vai trò gom dữ liệu . .
+    \item Lớp Truyền dẫn tầm xa: Sau khi được tổng hợp ở Nút quản lý vùng, dữ liệu sẽ được bắn về các trạm thu phát sóng lớn hơn (Trung tâm điều hành).
+    \item Lớp Giám sát trung tâm: Các Trung tâm điều hành khu vực sẽ đóng vai trò làm cầu nối (Gateway) cuối cùng, chuyển tiếp gói tin từ mạng vô tuyến nội bộ lên môi trường Internet (qua Wi-Fi, Ethernet hoặc 4G/LTE) và đưa về máy chủ tổng. Tại đây, quản trị viên có thể theo dõi và điều khiển toàn bộ các vùng giám sát khác nhau trên một giao diện hợp nhất.
+\end{itemize}
+Cấu trúc điển hình của một Node cảm biến bao gồm bốn khối chức năng chính: Khối cảm biến (Sensor Unit) thực hiện việc chuyển đổi đại lượng vật lý thành tín hiệu điện; Khối xử lý trung tâm (Processing Unit) số hóa và xử lý dữ liệu; Khối truyền thông (Transceiver Unit) thực hiện việc phát xạ tín hiệu vô tuyến; và Khối năng lượng (Power Unit) cung cấp dòng điện duy trì hoạt động. Cụ thể về cấu trúc của Node Sensor được thể hiện như Hình \ref{Hình 2.2}.
+ \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.9\linewidth]{Thuc_Hanh/Image/NodeStructure.pdf}
+        \caption{Cấu trúc của một node cảm biến}
+        \label{Hình 2.2}
+    \end{figure}
+ Điểm khác biệt lớn nhất của WSN trong môi trường chăn nuôi so với môi trường viễn thông thông thường là tính chất khắc nghiệt của không gian vật lý: độ ẩm bão hòa cao, khí ăn mòn và nhiễu sóng từ các vách ngăn bê tông, đòi hỏi phần cứng phải có độ bền và tính kháng nhiễu vượt trội.
+
+\subsubsection{Phân tích sinh lý học gia cầm và cơ chế tản nhiệt}
+Việc kiểm soát vi khí hậu trong chuồng nuôi không đơn thuần là bài toán tự động hóa mà bắt nguồn sâu xa từ đặc tính sinh lý của đối tượng vật nuôi. Gia cầm là động vật hằng nhiệt, cần duy trì nhiệt độ cơ thể ở mức $41^\circ C$ đến $42^\circ C$. Tuy nhiên, đặc điểm sinh học chí mạng của loài này là hoàn toàn không có tuyến mồ hôi. Lớp lông vũ dày bao phủ cơ thể lại hoạt động như một lớp cách nhiệt hoàn hảo, ngăn cản quá trình tỏa nhiệt qua bề mặt da.
+
+Do đó, gia cầm giải phóng lượng nhiệt dư thừa chủ yếu thông qua đường hô hấp (bức xạ và bay hơi nước qua niêm mạc phổi). Khi nhiệt độ môi trường tăng cao tiệm cận với nhiệt độ cơ thể, sự chênh lệch nhiệt độ (Gradient nhiệt) giảm xuống, làm mất đi khả năng tản nhiệt tự nhiên. Vật nuôi buộc phải thở dốc để tăng tốc độ bay hơi. Quá trình thở dốc này tiêu tốn một lượng năng lượng khổng lồ, làm biến đổi độ pH trong máu (gây kiềm hô hấp) và dẫn đến suy kiệt hệ thống tuần hoàn.
+
+\subsubsection{Chỉ số nhiệt ẩm (THI) và hiện tượng Stress nhiệt}
+Trong môi trường chuồng trại khép kín, nhiệt độ không hoạt động độc lập mà có sự tương tác cộng hưởng với độ ẩm tương đối (Relative Humidity - RH). Sự kết hợp này được định lượng hóa thông qua Chỉ số nhiệt ẩm (Temperature Humidity Index - THI). Độ ẩm môi trường càng cao, áp suất hơi nước trong không khí càng lớn, làm ức chế quá trình bay hơi nước từ hệ hô hấp của gia cầm, khiến vật nuôi cảm thấy nóng hơn nhiều so với nhiệt độ thực tế đo được bằng nhiệt kế.
+
+Công thức tính toán chỉ số THI \cite{thom1959discomfort, lin2006thermal} được ứng dụng rộng rãi trong các nghiên cứu nông nghiệp được biểu diễn bằng phương trình:
+\begin{equation}
+    {THI = 0.8 \times T_{db} + \frac{RH}{100} \times (T_{db} - 14.4) + 46.4}.
+\end{equation}
+Trong đó:
+\begin{itemize}
+    \item $T_{db}$: Nhiệt độ bầu khô (Dry-bulb temperature) tính bằng độ C.
+    \item $RH$: Độ ẩm tương đối tính bằng phần trăm (\%).
+\end{itemize}
+
+Dựa trên ma trận THI, gia cầm sẽ rơi vào trạng thái "Stress nhiệt nhẹ" khi THI vượt mức 72, "Stress nhiệt cấp tính" ở mức 78, và có nguy cơ suy tim diện rộng, chết hàng loạt khi THI vượt ngưỡng 82. Việc chỉ sử dụng cảm biến nhiệt độ đơn lẻ là không đủ cơ sở để hệ thống máy tính đưa ra quyết định đóng cắt quạt thông gió, mà bắt buộc phải thiết lập một hàm nội suy kết hợp cả nhiệt độ và độ ẩm ngay tại lớp xử lý biên.
+% \subsubsection{Động học phân hủy chất thải và cơ chế sinh khí Amoniac ($NH_3$)}
+% Bên cạnh bài toán về nhiệt - ẩm, môi trường chăn nuôi mật độ cao sinh ra một lượng lớn khí độc, đặc biệt là Amoniac ($NH_3$). Quá trình sinh khí $NH_3$ không xuất phát trực tiếp từ vật nuôi mà là kết quả của các phản ứng hóa sinh phức tạp diễn ra tại lớp đệm lót chuồng.
+
+% Trong phân gia cầm có chứa một lượng lớn axit uric ($C_5H_4N_4O_3$) và urea không tiêu hóa hết. Dưới xúc tác của enzyme uricase và urease từ vi sinh vật có trong môi trường, kết hợp với điều kiện độ ẩm cao (RH $> 75\%$) và nhiệt độ ấm, quá trình thủy phân diễn ra mạnh mẽ\cite{ni2000ammonia}:
+% \begin{equation}
+%     C_5H_4N_4O_3 + 1.5O_2 + 4H_2O \rightarrow 5CO_2 + 4NH_3
+% \end{equation}
+
+% $NH_3$ là chất khí không màu, nhẹ hơn không khí nhưng lại có ái lực cực mạnh với nước. Khi khí này bốc lên từ nền chuồng, chúng hòa tan ngay lập tức vào lớp dịch nhầy trên niêm mạc mắt và đường hô hấp của gia cầm, tạo thành dung dịch amoni hydroxit ($NH_4OH$) có tính kiềm mạnh, gây bỏng rát, viêm loét giác mạc và phá hủy lớp lông mao bảo vệ khí quản.
+
+\subsubsection{Tác động độc lý học của vi khí hậu lên vật nuôi}
+Theo các tiêu chuẩn chăn nuôi quốc tế, ngưỡng an toàn tối đa của $NH_3$ trong chuồng nuôi không được vượt quá 25 ppm. Ở nồng độ 50 ppm, tỷ lệ tăng trọng của vật nuôi giảm 15-20\% do giảm lượng thức ăn ăn vào và tổn thương hệ tiêu hóa. Ở mức 100 ppm, nguy cơ tử vong tăng đột biến do viêm phổi cục bộ. Sự thay đổi của các tham số này diễn ra rất nhanh, có thể tính bằng phút khi hệ thống thông gió gặp sự cố. Điều này đặt ra yêu cầu thiết kế hệ thống IoT không chỉ dừng lại ở việc "đọc số liệu", mà phải là "phản ứng tức thời" - nền tảng để đưa Điện toán biên vào mô hình thiết kế.
+% \subsection{Khảo sát một số nghiên cứu liên quan} % (muc trong, trung lap; phan khao sat day du da o cuoi chuong 2.6)
+\subsection{Điện toán biên (Edge Computing) và Kiến trúc IoT phân tán}
+Sự bùng nổ của Internet vạn vật (IoT) khiến một lượng dữ liệu khổng lồ (Big Data) được sinh ra từng giây từ vô số thiết bị ngoại vi. Trong hơn một thập kỷ qua, mô hình Điện toán đám mây (Cloud Computing) luôn được xem là xương sống của mọi hệ thống IoT, nơi đám mây đóng vai trò là trung tâm xử lý tập trung, cung cấp năng lực tính toán và không gian lưu trữ gần như vô hạn. Tuy nhiên, khi các ứng dụng IoT tiến sâu vào các lĩnh vực đòi hỏi tính thời gian thực khắt khe và độ tin cậy tuyệt đối như y tế, xe tự hành, tự động hóa công nghiệp và nông nghiệp chính xác, mô hình tập trung truyền thống bắt đầu bộc lộ những giới hạn vật lý và logic không thể vượt qua. Từ bối cảnh đó, Điện toán biên (Edge Computing) ra đời như một sự dịch chuyển tất yếu của kiến trúc mạng, đưa năng lực xử lý, lưu trữ và ra quyết định rời khỏi trung tâm dữ liệu xa xôi để tiến về sát nhất với nguồn phát sinh dữ liệu.
+\subsubsection{Nghịch lý đám mây (Cloud Paradox) trong các hệ thống IoT truyền thống}
+Trong mô hình kiến trúc IoT truyền thống dựa trên đám mây, các thiết bị đầu cuối (End-nodes) thường được thiết kế dưới dạng các "nút thụ động" (Dummy nodes). Chức năng duy nhất của chúng là đo lường các đại lượng vật lý (như nhiệt độ, độ ẩm, nồng độ khí gas), chuyển đổi thành tín hiệu số và truyền tải toàn bộ dữ liệu thô (Raw Data) qua mạng viễn thông lên máy chủ đám mây. Đám mây sẽ tiếp nhận, chạy các thuật toán phân tích, so sánh với các ngưỡng an toàn và sau đó gửi ngược lại các lệnh điều khiển (Downlink) về các cơ cấu chấp hành (Actuators) tại hiện trường. Mô hình này, mặc dù tận dụng được sức mạnh tính toán vô song của máy chủ, lại vấp phải một rào cản kỹ thuật nghiêm trọng được giới học thuật định danh là "Nghịch lý đám mây" (Cloud Paradox).
+
+Nghịch lý đám mây xoay quanh bốn thách thức cốt lõi không thể khắc phục triệt để nếu chỉ dựa vào việc nâng cấp hạ tầng mạng: độ trễ truyền dẫn, băng thông nghẽn cổ chai, chi phí duy trì năng lượng và rủi ro điểm lỗi đơn lẻ (Single Point of Failure).
+
+Thứ nhất, về độ trễ truyền dẫn (Propagation Latency). Độ trễ toàn trình (Round-Trip Time - RTT) của một hệ thống IoT tập trung được cấu thành từ nhiều thành phần phức tạp, có thể được biểu diễn qua phương trình toán học cơ bản\cite{kurose2017computer}:
+\begin{equation}
+    {RTT = 2 \times (T_{trans} + T_{prop} + T_{queue} + T_{proc\_net}) + T_{proc\_cloud}}.
+\end{equation}
+Trong đó, $T_{trans}$ là thời gian phát dữ liệu lên kênh truyền, $T_{prop}$ là thời gian lan truyền tín hiệu điện từ qua các môi trường vật lý (cáp đồng, cáp quang, không gian tự do), $T_{queue}$ là thời gian gói tin phải nằm chờ tại các bộ đệm của bộ định tuyến (Router) trên đường đi, $T_{proc\_net}$ là thời gian xử lý tiêu đề gói tin (Header processing) tại các trạm chuyển tiếp, và $T_{proc\_cloud}$ là thời gian CPU của máy chủ đám mây thực thi thuật toán. 
+Đối với các trang trại nằm ở vùng sâu vùng xa, dữ liệu phải đi qua hàng chục trạm trung chuyển trước khi tới được Data Center đặt tại các thành phố lớn hoặc quốc gia khác. Sự biến động của $T_{queue}$ do nghẽn mạng có thể đẩy RTT lên đến hàng giây, hoặc thậm chí hàng chục giây (Jitter). Đối với một hệ thống giám sát vi khí hậu, sự chậm trễ này là một lỗ hổng chí mạng. Khi nồng độ khí độc NH3 tăng vọt, nếu hệ thống thông gió phải chờ đợi lệnh từ Cloud mất vài giây, lượng khí độc tích tụ đã đủ để làm tổn thương vĩnh viễn niêm mạc hô hấp của hàng ngàn cá thể gia cầm.
+
+Thứ hai, giới hạn về băng thông và năng lượng. Việc liên tục phát sóng vô tuyến để đẩy hàng ngàn bản ghi dữ liệu thô (ví dụ: chu kỳ 1 giây/lần) lên mạng 3G/4G tiêu tốn một lượng năng lượng khổng lồ. Năng lượng tiêu thụ cho quá trình phát sóng vô tuyến (RF Transmission) luôn lớn hơn gấp hàng trăm lần so với năng lượng dành cho việc tính toán nội bộ tại vi điều khiển. Việc lạm dụng đám mây làm cạn kiệt nguồn pin của các thiết bị Node một cách nhanh chóng, đi ngược lại triết lý tiêu thụ năng lượng thấp của Mạng cảm biến không dây (WSN).
+
+Thứ ba, rủi ro về điểm lỗi đơn lẻ. Hệ thống IoT phụ thuộc hoàn toàn vào đám mây là một hệ thống thiếu tính kiên cường (Resilience). Nếu đường kết nối Internet (Backhaul link) từ trang trại lên đám mây bị đứt gãy do thời tiết, thiên tai hoặc sự cố nhà mạng, toàn bộ luồng điều khiển sẽ bị tê liệt hoàn toàn. Mặc dù các cảm biến nội bộ vẫn đang đo được mức nhiệt độ gây tử vong là $40^\circ C$, nhưng do không có kết nối Internet để báo cáo lên Cloud, các Node không thể tự nhận thức được sự nguy hiểm, và các quạt thông gió vẫn nằm im lìm. Rủi ro này biến mô hình đám mây trở thành một canh bạc rủi ro cao đối với các ngành công nghiệp trọng yếu.
+
+\subsubsection{Sự dịch chuyển kiến trúc: Từ Cloud Computing đến Edge Computing}
+Để giải quyết triệt để "Nghịch lý đám mây", các nhà nghiên cứu kiến trúc mạng đã đề xuất mô hình Điện toán biên (Edge Computing). Khái niệm này không nhằm mục đích thay thế hoàn toàn Cloud, mà tạo ra một sự phân bổ khối lượng công việc hợp lý dọc theo trục topo mạng từ biên đến trung tâm.
+
+Điện toán biên định nghĩa việc đẩy các năng lực tính toán logic, lưu trữ dữ liệu ngắn hạn, phân tích thời gian thực và phân phối ứng dụng ra khu vực rìa của mạng lưới \cite{shi2016edge}. Rìa ở đây có thể là các Gateway công nghiệp, các trạm gốc viễn thông (Base stations), hoặc sâu hơn nữa là trực tiếp tại các vi điều khiển (MCU) của các Node cảm biến cuối cùng. Triết lý của Điện toán biên là: Dữ liệu được sinh ra ở đâu, hãy xử lý nó ngay tại đó, hoặc càng gần đó càng tốt, trước khi quyết định có cần đẩy nó qua mạng diện rộng hay không.
+
+Bảng \ref{Bảng 2.1} so sánh trên cung cấp một cái nhìn đối chiếu toàn diện giữa hai mô hình kiến trúc, làm nổi bật sự đánh đổi (Trade-off) mang tính tất yếu trong thiết kế hệ thống. 
+
+\begin{table}[H]
+\centering
+\caption{Bảng phân tích so sánh các đặc trưng cốt lõi giữa Điện toán đám mây và Điện toán biên}
+\label{Bảng 2.1}
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{p{3.5cm} p{5.5cm} p{5.5cm}}
+\hline
+\textbf{Tiêu chí đánh giá} & \textbf{Điện toán Đám mây (Cloud Computing)} & \textbf{Điện toán Biên (Edge Computing)} \\ \hline
+\textbf{Vị trí xử lý dữ liệu} & Tập trung tại các trung tâm dữ liệu quy mô lớn (Data Centers) nằm xa nguồn dữ liệu. & Phân tán tại các thiết bị ngoại vi (Nodes, Gateways) ngay sát hiện trường vật lý. \\ 
+\textbf{Độ trễ toàn trình (Latency)} & Rất cao và khó dự đoán (thường $> 100$ ms đến vài giây) do phụ thuộc vào định tuyến WAN. & Cực kỳ thấp, mang tính tất định (Deterministic), thường ở dải $< 10$ ms. \\ 
+\textbf{Sự phụ thuộc Internet} & Phụ thuộc 100\%. Đứt mạng đồng nghĩa với việc mất hoàn toàn khả năng điều khiển. & Hoạt động độc lập (Offline-capable). Vẫn duy trì các vòng lặp an toàn cục bộ khi đứt mạng. \\ 
+\textbf{Tiêu thụ băng thông} & Khổng lồ do phải đẩy toàn bộ dữ liệu thô (Raw Data) liên tục. & Rất thấp do chỉ truyền đi dữ liệu đã qua tổng hợp hoặc các bản tin cảnh báo (Metadata). \\ 
+\textbf{Năng lực tính toán \& Lưu trữ} & Gần như vô hạn (Sử dụng các cụm Server, GPU, TPU khổng lồ). & Hạn chế nghiêm ngặt bởi vi điều khiển, dung lượng RAM/Flash và nguồn pin cục bộ. \\ 
+\textbf{Tính bảo mật \& Quyền riêng tư} & Dữ liệu nhạy cảm phải truyền qua mạng công cộng, rủi ro bị đánh chặn cao. & Dữ liệu nhạy cảm được xử lý và lưu giữ ngay tại mạng nội bộ, giảm thiểu bề mặt tấn công. \\ \hline
+\end{tabular}
+\end{table}
+Thiết bị biên được lập trình các máy trạng thái (State Machines) an toàn dự phòng, đảm bảo tính mạng vật nuôi không bị đe dọa khi cáp quang đứt. Tuy nhiên, sự ưu việt này phải đánh đổi bằng giới hạn về năng lực tính toán. Trong khi Cloud có thể dễ dàng chạy các mô hình Học sâu (Deep Learning) hàng tỷ tham số, thì Edge Devices (đặc biệt là các MCU như ESP32) chỉ sở hữu bộ nhớ RAM tính bằng Kilobyte và không có hệ thống làm mát chủ động. Do đó, các thuật toán Điện toán biên bắt buộc phải được tinh gọn hóa, sử dụng các cấu trúc dữ liệu nhẹ, tránh cấp phát bộ nhớ động (Dynamic memory allocation) để chống phân mảnh, và ưu tiên xử lý bằng các toán tử thao tác bit (Bitwise operations) để giảm chu kỳ máy. Cuối cùng, về mặt bảo mật, việc không đưa dữ liệu thô rời khỏi mạng nội bộ giúp thu hẹp đáng kể bề mặt tấn công (Attack Surface), biến mô hình Edge trở thành lựa chọn hàng đầu cho việc thiết kế kiến trúc chuẩn công nghiệp và an toàn thông tin.
+\subsubsection{Phân lớp kiến trúc hệ thống Edge IoT}
+Một hệ thống IoT phân tán tích hợp hoàn chỉnh Điện toán biên không phải là một mặt phẳng đồng nhất, mà được cấu trúc thành một hệ thống phân cấp (Hierarchical Architecture) gồm ba lớp phân định rõ ràng như Hình \ref{Hình 2.3}. Mỗi lớp đảm nhiệm một vai trò chuyên biệt, giải quyết các bài toán khác nhau về thời gian đáp ứng và năng lực xử lý.
+\begin{figure}[H]
+        \centering        \includegraphics[width=0.5\linewidth]{Thuc_Hanh/Image/3TierIoT.png}
+        \caption{Kiến trúc phân tầng trong IoT}
+        \label{Hình 2.3}
+    \end{figure}
+Sơ đồ kiến trúc phân lớp thể hiện một hình chóp đặc trưng của luồng dữ liệu và năng lực tính toán. Ở phần đáy rộng nhất là Lớp biên cực trị (Extreme Edge Layer), bao gồm hàng loạt các thiết bị vi điều khiển (MCU), cảm biến đa thông số và rơ-le chấp hành. Lớp này tiếp xúc trực tiếp với thế giới vật lý, có nhiệm vụ "lấy mẫu" môi trường thực tế (Continuous sampling). Đặc tính của lớp này là có số lượng thiết bị vô cùng lớn, nhưng năng lực tính toán trên mỗi thiết bị lại rất hạn hẹp (thường là vi xử lý lõi đơn hoặc lõi kép tần số thấp, chạy bằng pin). Mọi sự kiện thời gian thực cực đoan nhất (như ngắt khẩn cấp khi quá nhiệt độ) bắt buộc phải được khép kín vòng lặp kiểm soát ngay tại lớp này để đảm bảo độ trễ bằng phần nghìn giây.
+
+Tiến lên phần giữa của tháp là Lớp mạng cục bộ / Lớp sương mù (Fog/Network Layer). Lớp này được đại diện bởi các Gateway công nghiệp, các Router Edge hoặc các máy tính nhúng mạnh mẽ hơn (như Raspberry Pi hoặc máy tính công nghiệp IPC). Gateway đóng vai trò là một "nhà ga trung chuyển" và là người phiên dịch giao thức (Protocol Translator). Nó thu thập sóng vô tuyến tầm ngắn/tầm trung (như LoRa, Zigbee) từ vô số Node ở lớp đáy, tổng hợp dữ liệu (Data Aggregation), mã hóa lại thành các giao thức mạng lõi (như MQTT qua TCP/IP) và phân phối luồng đi. Tại lớp này, các tính toán biên ở mức độ vừa (Middle-edge computing) có thể được thực thi, chẳng hạn như tính toán trung bình cộng dữ liệu của toàn bộ 50 Node trong trang trại để đưa ra quyết định bật quạt tổng, trong khi các Node chỉ điều khiển quạt cục bộ của riêng nó.
+
+Đỉnh của hình tháp là Lớp đám mây (Cloud Layer). Được giải phóng hoàn toàn khỏi gánh nặng phải điều khiển trực tiếp các Rơ-le ở cấp độ mili-giây, Cloud giờ đây có thể tập trung vào thế mạnh cốt lõi của mình: Xử lý dữ liệu lớn (Big Data Processing) theo mẻ (Batch processing). Máy chủ đám mây sẽ lưu trữ dữ liệu lịch sử hàng năm của toàn bộ chuỗi trang trại, thực thi các thuật toán khai phá dữ liệu (Data Mining), huấn luyện các mô hình AI dự báo xu hướng dịch bệnh dựa trên biểu đồ vi khí hậu dài hạn, và cung cấp các giao diện giám sát tổng thể (Dashboards) cho người quản trị ở bất kỳ đâu trên thế giới thông qua kết nối Internet.
+\subsubsection{Các chiến lược chia tải tác vụ tại biên (Computation Offloading)}
+Một trong những bài toán khoa học hóc búa nhất của lĩnh vực Điện toán biên là bài toán Chia tải tác vụ (Computation Offloading). Khi một ứng dụng phần mềm bao gồm nhiều khối logic khác nhau, nhà thiết kế hệ thống phải quyết định toán học xem khối logic nào sẽ được chạy trên bộ vi xử lý yếu ớt tại Node, khối logic nào sẽ được đóng gói gửi qua sóng vô tuyến để chạy trên Gateway, và khối nào sẽ bị đẩy lên tận Cloud. Quyết định này không mang tính cảm tính mà dựa trên việc tối ưu hóa một hàm mục tiêu (Objective Function) liên quan đến tiêu thụ năng lượng và độ trễ.
+
+Xét một tác vụ $i$ cần được thực thi, nó có thể được định nghĩa bởi một bộ ba tham số $T_i = \{D_i, C_i, T_{max\_i}\}$. Trong đó:
+\begin{itemize}
+    \item $D_i$: Kích thước dữ liệu đầu vào của tác vụ (tính bằng bit hoặc byte).
+    \item $C_i$: Khối lượng tính toán yêu cầu để hoàn thành tác vụ (tính bằng số chu kỳ lệnh vi xử lý - CPU cycles).
+    \item $T_{max\_i}$: Ràng buộc thời gian tối đa cho phép để hoàn thành tác vụ (Độ trễ tối đa).
+\end{itemize}
+Hệ thống có hai lựa chọn chiến lược để thực thi tác vụ này. Lựa chọn thứ nhất là Thực thi cục bộ (Local Execution) ngay tại vi điều khiển của Node \cite{mao2017survey} . Thời gian thực thi cục bộ ($t_{local}$) và năng lượng tiêu thụ cục bộ ($E_{ocal}$) được xác định bởi công thức\cite{mach2017mobile}:
+\begin{equation}
+    {t_{local} = \frac{C_i}{f_{mcu}}}.
+\end{equation}
+\begin{equation}
+    {E_{local} = P_{active} \times t_{local} = \kappa \cdot f_{mcu}^2 \cdot C_i}.
+\end{equation}
+Trong đó, $f_{mcu}$ là xung nhịp hoạt động của vi điều khiển, $P_{active}$ là công suất tiêu thụ của CPU ở trạng thái hoạt động toàn tải, và $\kappa$ là hệ số điện dung chuyển mạch hiệu dụng tùy thuộc vào cấu trúc bán dẫn của chip.
+
+Lựa chọn thứ hai là Chia tải sang thiết bị khác (Remote Offloading), ví dụ như gửi toàn bộ dữ liệu $D_i$ qua mạng LoRa lên Gateway để Gateway tính toán hộ. Lúc này, tổng thời gian ($t_{offload}$) và tổng năng lượng ($E_{offload}$) \cite{mach2017mobile}đối với Node sẽ là:
+\begin{equation}
+    t_{offload} = \frac{D_i}{R_{uplink}} + \frac{C_i}{f_{gateway}} + \frac{D_{out}}{R_{downlink}}.
+\end{equation}
+\begin{equation}
+    E_{offload} = P_{tx} \times \frac{D_i}{R_{uplink}} + P_{rx} \times \frac{D_{out}}{R_{downlink}}.
+\end{equation}
+Với $R_{uplink}$ và $R_{downlink}$ là tốc độ truyền dữ liệu băng thông lên và xuống của mạng LoRa, $P_{tx}$ và $P_{rx}$ là công suất phát và công suất thu của module vô tuyến, $f_{gateway}$ là xung nhịp của CPU tại Gateway (thường lớn hơn rất nhiều so với Node).
+
+Dựa trên các phương trình trên, bộ điều phối sẽ so sánh. Nếu $E_{local} < E_{offload}$ và $t_{local} < T_{max\_i}$, tác vụ sẽ được giữ lại chạy 100\% tại Node. Trong hệ thống giám sát chuồng trại, thuật toán so sánh ngưỡng nhiệt độ (FSM) có khối lượng tính toán $C_i$ vô cùng nhỏ (chỉ vài phép toán so sánh IF-ELSE đơn giản), trong khi kích thước dữ liệu $D_i$ đẩy đi không hề nhỏ, cộng thêm tốc độ vô tuyến LoRa ($R_{uplink}$) rất chậm (chỉ vài trăm bit/giây). Do đó, hàm $t_{offload}$ luôn lớn hơn rất nhiều so với $t_{local}$, và năng lượng phát sóng LoRa $E_{offload}$ cũng đắt đỏ hơn nhiều so với việc tính toán nội bộ. Hệ quả tất yếu về mặt kiến trúc là hệ thống phải áp dụng mô hình Chia tải cục bộ nhị phân (Local Binary Offloading) cho luồng điều khiển, nghĩa là Node sẽ ôm trọn 100\% nhiệm vụ tính toán nhận diện bất thường và ra quyết định đóng Rơ-le, không san sẻ với Gateway để đảm bảo thời gian cực nhanh và tiết kiệm pin tối đa.
+\subsubsection{Phương pháp luận đồng thiết kế Phần cứng/Phần mềm (HW/SW Co-design) cho thiết bị biên}
+Trong kỹ thuật nhúng truyền thống, phần cứng thường được thiết kế trước, sau đó các kỹ sư phần mềm mới viết mã để cố gắng nhồi nhét vào cấu trúc đã được cố định đó. Tuy nhiên, đối với Edge IoT, cách tiếp cận này sẽ dẫn đến sự lãng phí tài nguyên vô ích hoặc hiệu năng không tốt. Thay vào đó, phương pháp luận Đồng thiết kế Phần cứng/Phần mềm (Hardware/Software Co-design) được áp dụng.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\linewidth]{Thuc_Hanh/Image/HWSWCoDesign_UML.pdf}
+    \caption{Quy trình đồng thiết kế phần cứng và phần mềm}
+    \label{Hình 2.4}
+\end{figure}
+Hình \ref{Hình 2.4} trên phác họa chu trình phát triển lặp (Iterative process) của phương pháp đồng thiết kế. Điểm khởi đầu của quá trình không phải là chọn chip hay viết code, mà là định lượng hóa các Ràng buộc hệ thống (System Constraints) mang tính sống còn, ví dụ như độ trễ hệ thống không được vượt quá 50ms và thiết bị phải trụ được 3 tháng trên một viên pin 18650. Từ đây, luồng phát triển rẽ nhánh thành hai quá trình chạy song song nhưng tương tác liên tục: Luồng phần cứng (HW) và Luồng phần mềm (SW).
+
+Ở nhánh Thiết kế phần cứng (Hardware Design Flow), quá trình bắt đầu từ việc phân tích kiến trúc CPU/MCU nhằm lựa chọn nền tảng xử lý phù hợp, tiếp theo là thiết kế cơ chế quản lý năng lượng để đáp ứng yêu cầu tiêu thụ điện năng thấp, cuối cùng là cấu hình bộ nhớ ngoài nhằm bảo đảm đủ không gian lưu trữ chương trình, dữ liệu và hỗ trợ các chức năng mở rộng của hệ thống. Song song với đó, nhánh Thiết kế phần mềm (Software Design Flow) tiến hành phân hoạch hệ thống thành các máy trạng thái hữu hạn (FSM Partitioning), cấu hình hệ điều hành thời gian thực FreeRTOS để tổ chức đa nhiệm, sau đó tối ưu hóa bộ nhớ nhằm giảm dung lượng RAM/Flash sử dụng và nâng cao hiệu quả thực thi.
+
+Điểm hội tụ của hai nhánh là bước Mô phỏng đồng thời (Co-Simulation), nơi mô hình phần cứng và phần mềm được đánh giá như một hệ thống thống nhất thay vì kiểm thử riêng lẻ. Sau quá trình mô phỏng, hệ thống được so sánh với các chỉ tiêu hiệu năng đã đặt ra, bao gồm thời gian đáp ứng, mức tiêu thụ năng lượng, khả năng sử dụng bộ nhớ và độ ổn định vận hành. Nếu bất kỳ tiêu chí nào chưa đạt, quy trình sẽ quay trở lại giai đoạn thiết kế, chủ yếu ở nhánh phần mềm để điều chỉnh phương pháp phân hoạch FSM, cấu hình FreeRTOS hoặc tối ưu thuật toán; khi cần thiết, các quyết định ở nhánh phần cứng như lựa chọn kiến trúc MCU, cấu hình bộ nhớ hay cơ chế quản lý năng lượng cũng sẽ được xem xét lại. Chu trình lặp này tiếp tục cho đến khi toàn bộ mục tiêu thiết kế được thỏa mãn, khi đó dự án chuyển sang giai đoạn chế tạo nguyên mẫu phần cứng và nạp chương trình (PCB & Firmware Prototyping) để kiểm chứng trên hệ thống thực tế trước khi tiến hành các bước đánh giá và hoàn thiện sản phẩm.
+
+\subsection{Công nghệ truyền thông vô tuyến LoRa và Phân tích quỹ đường truyền}
+Nền tảng để Điện toán biên phân tán có thể hoạt động hiệu quả là một hạ tầng truyền thông vô tuyến đáng tin cậy, đóng vai trò như hệ tuần hoàn kết nối các Node cô lập với trạm Gateway trung tâm. Trong điều kiện chăn nuôi công nghiệp khắc nghiệt, nơi các tín hiệu bị chặn đứng bởi tường bê tông dày, mái tôn kim loại và chịu sự can nhiễu từ các hệ thống điện cơ công suất lớn, các chuẩn vô tuyến truyền thống như WiFi hay Bluetooth hoàn toàn bất lực. Để giải quyết bài toán giao tiếp vô tuyến tầm xa nhưng lại tiêu thụ năng lượng siêu thấp, công nghệ LoRa (Long Range) đã nổi lên như một chuẩn mực công nghiệp không thể thay thế.
+\subsubsection{Các công nghệ mạng diện rộng công suất thấp (LPWAN)}
+Thế giới mạng không dây IoT được phân chia thành các phổ công nghệ dựa trên hai trục tham số tỷ lệ nghịch với nhau: Tầm xa phủ sóng (Coverage Range) và Tốc độ truyền tải dữ liệu (Data Rate). Ở phổ tốc độ cao nhưng tầm gần, chúng ta có các công nghệ Mạng cục bộ không dây (WLAN/WPAN) như WiFi, Bluetooth Low Energy (BLE), Zigbee, thích hợp cho nhà thông minh nhưng không thể vươn ra các trang trại rộng hàng hecta. Ở phổ tốc độ cao, tầm xa, chúng ta có mạng thông tin di động Cellular (3G/4G/5G). Tuy nhiên, cái giá phải trả cho băng thông di động là năng lượng tiêu thụ cực kỳ lớn và thiết kế phần cứng phức tạp, khiến tuổi thọ pin của thiết bị chỉ đếm bằng ngày hoặc giờ.
+
+Để lấp đầy khoảng trống chiến lược ở phổ thiết bị cần tầm phủ sóng rộng lớn (vài kilomet) nhưng chỉ cần gửi các gói tin dữ liệu nhỏ (vài chục byte) với năng lượng cục pin hoạt động kéo dài nhiều năm, một lớp mạng mới đã được định nghĩa: Mạng diện rộng công suất thấp (Low-Power Wide-Area Network - LPWAN). Trong nhóm LPWAN, ba công nghệ đang dẫn dắt thị trường toàn cầu bao gồm NB-IoT, Sigfox và LoRa, mỗi công nghệ theo đuổi một triết lý thiết kế lớp vật lý hoàn toàn trái ngược nhau.
+
+NB-IoT (Narrowband IoT) là một tiêu chuẩn do tổ chức 3GPP phát triển, hoạt động trên các băng tần phổ được cấp phép (Licensed bands) của mạng LTE hiện hữu. Kỹ thuật này cung cấp chất lượng dịch vụ (QoS) rất cao và độ trễ thấp do được bảo vệ khỏi nhiễu đồng kênh, nhưng yêu cầu doanh nghiệp phải trả phí thuê bao SIM định kỳ và phụ thuộc tuyệt đối vào độ phủ sóng trạm gốc của nhà mạng viễn thông. Sigfox tiếp cận theo hướng hoàn toàn khác, sử dụng kỹ thuật truyền dải siêu hẹp (Ultra-Narrowband - UNB) với tốc độ rùa bò chỉ 100 bps để đạt được khả năng xuyên thấu xa nhất và tiết kiệm pin nhất. Tuy nhiên, kiến trúc của Sigfox bị hạn chế nghiêm trọng về tính năng liên lạc hai chiều (Bi-directional), số lượng bản tin đẩy xuống Node (Downlink) bị giới hạn ngặt nghèo (thường chỉ 4 tin/ngày), khiến nó vô dụng trong việc thực thi các lệnh điều khiển hồi tiếp.
+
+Vượt qua những nhược điểm trên, LoRa (được cấp bằng sáng chế bởi Semtech) sử dụng kỹ thuật trải phổ trên băng tần ISM không cần cấp phép (Unlicensed bands như 433MHz tại Châu Á, 868MHz tại Châu Âu). Sự xuất sắc của LoRa nằm ở việc nó cho phép các kỹ sư tự do xây dựng các mạng cục bộ nội bộ (Private Networks) mà không phải trả bất kỳ khoản phí viễn thông nào. Hơn nữa, nó hỗ trợ giao tiếp hai chiều hoàn hảo, cân bằng tuyệt vời giữa chi phí năng lượng và khả năng xuyên thấu tường chắn, trở thành ứng cử viên duy nhất đáp ứng hoàn hảo cho cấu trúc mạng của dự án.
+
+\subsubsection{Lớp vật lý của LoRa và Kỹ thuật điều chế Chirp Spread Spectrum (CSS) \cite{augustin2016study}}
+Sức mạnh vô tuyến của LoRa không nằm ở việc tăng công suất phát (do thiết bị pin không cho phép), mà nằm ở một kỹ thuật điều chế tinh vi ở Lớp vật lý (Physical Layer) có tên là Chirp Spread Spectrum (CSS). Nguồn gốc của CSS xuất phát từ các hệ thống radar quân sự và viễn thông vũ trụ sâu, nơi tín hiệu phải vượt qua mức độ nhiễu nền cực kỳ khủng khiếp.
+
+Khác với kỹ thuật điều chế FSK (Frequency Shift Keying) thông thường (trong đó mức logic 0 và 1 được biểu diễn bởi hai tần số tĩnh rời rạc), CSS biểu diễn dữ liệu bằng cách sử dụng các xung tần số quét tuyến tính liên tục theo thời gian. Một xung như vậy được gọi là "Chirp". Tần số tức thời của một chirp thay đổi liên tục trên toàn bộ băng thông (Bandwidth - BW) được cấp phát. Phương trình tần số tức thời $f(t)$ của một xung Up-chirp (tần số tăng dần) được mô tả bằng hàm toán học\cite{vangelista2015frequency}:
+\begin{equation}
+    {f(t) = f_0 + \left( \frac{BW}{T} \right) \times t}.
+\end{equation}
+Trong đó, $f_0$ là tần số bắt đầu ở mép dưới của băng thông, $BW$ là độ rộng dải băng thông (ví dụ 125 kHz), $T$ là khoảng thời gian kéo dài của một ký hiệu (Symbol duration), và tỉ số $\left( \frac{BW}{T} \right)$ chính là tốc độ quét tần số (Sweep rate).
+
+Bằng cách mã hóa dữ liệu vào thời điểm bắt đầu nhảy tần (Cyclic shift) của các xung chirp, tín hiệu chứa thông tin hữu ích bị làm "nhiễu hóa" và trải rộng năng lượng của nó ra toàn bộ băng thông rộng. Hệ quả thần kỳ của kỹ thuật này tuân theo Định lý Shannon-Hartley nổi tiếng về dung lượng kênh truyền \cite{shannon1948mathematical}:
+\begin{equation}
+    {C = BW \times \log_2 \left( 1 + \frac{S}{N} \right)}.
+\end{equation}
+Định lý này khẳng định rằng, để truyền được một tốc độ thông tin $C$ không đổi trong điều kiện Tỷ số tín hiệu trên nhiễu (Signal-to-Noise Ratio - $\frac{S}{N}$) cực kỳ thấp (tín hiệu yếu hơn cả nhiễu nền), cách duy nhất là phải mở rộng băng thông $BW$ lên cực kỳ lớn. Máy thu LoRa, nhờ biết trước cấu trúc toán học của các xung chirp, sẽ sử dụng một bộ lọc phối hợp (Matched Filter) tích phân tín hiệu theo thời gian để cộng hưởng lại năng lượng, từ đó khôi phục lại dữ liệu gốc ngay cả khi sóng vô tuyến đo được yếu hơn mức nhiễu nền của môi trường tự nhiên lên tới $20 \text{ dB}$ (nghĩa là tín hiệu chìm sâu dưới nhiễu gấp 100 lần về mặt công suất).
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{Thuc_Hanh/Image/spectrumLora.png}
+    \caption{Up-Chirp và Down-Chirp trong LoRa}
+    \label{Hình 2.5}
+\end{figure}
+Đồ thị phổ tần - thời gian (Spectrogram) như trong Hình \ref{Hình 2.5} là một minh họa trực quan sinh động nhất về cách sóng LoRa khiêu vũ trong không gian điện từ. Trục hoành của đồ thị đại diện cho thời gian ($t$), trong khi trục tung đại diện cho dải tần số hoạt động ($f$). Nhìn vào đồ thị, ta không thấy các điểm tần số rời rạc như công nghệ Bluetooth hay WiFi, mà thấy các đường thẳng chéo liên tục. Một đường thẳng chéo đi lên từ góc dưới bên trái (tần số thấp) lên góc trên bên phải (tần số cao) là một "Up-chirp" nguyên thủy. Độ dốc của đường thẳng này chính là tốc độ quét tần số $\frac{BW}{T}$.
+
+Trong chuẩn LoRa, mỗi phần tử dữ liệu (Symbol) truyền đi không đơn thuần là một bit 0 hoặc 1, mà nó chứa $SF$ bit thông tin. Thông tin này được nhúng vào tín hiệu bằng cách thay đổi điểm xuất phát tần số của đường chéo. Khi đường chéo này chạm đến mép viền trên của băng thông, nó sẽ bị cắt đứt và "vòng" (wrap-around) lại mép viền dưới để tiếp tục quét lên. Sự gián đoạn đột ngột (nhảy bậc) về tần số này chứa đựng giá trị số học của biểu tượng cần truyền. Tại bộ thu Gateway, các mạch nhân tần số sẽ lấy tín hiệu nhận được nhân với một Down-chirp (đường chéo đi xuống) chuẩn cục bộ. Nếu hai xung này đồng bộ, kết quả của phép nhân sẽ tạo ra một xung Dirac duy nhất (một đỉnh nhọn năng lượng) trên miền tần số (thông qua phép biến đổi Fast Fourier Transform - FFT). 
+\subsubsection{Các tham số vô tuyến cốt lõi:}
+Hiệu năng phát sóng của thiết bị biên không phải là một hằng số cố định, mà có thể được lập trình điều khiển linh hoạt thông qua ba tham số vật lý nền tảng. Sự tinh chỉnh ba tham số này tạo ra một bài toán tối ưu đa biến cực kỳ phức tạp để cân bằng giữa Tầm xa phủ sóng, Thời lượng pin và Tốc độ truyền tải.
+\paragraph{Hệ số trải phổ (Spreading Factor - SF):}
+SF là tham số linh hồn của LoRa, quy định số lượng xung chirp quét được sử dụng để đại diện cho một biểu tượng (Symbol) thông tin duy nhất. Mối quan hệ toán học được biểu diễn qua công thức: Một Symbol sẽ chứa đựng $SF$ bit dữ liệu và được hình thành từ $2^{SF}$ xung chip. Giá trị SF được chuẩn hóa giới hạn từ SF7 đến SF12.
+
+Khi ta tăng SF lên một đơn vị (ví dụ từ SF7 lên SF8), số lượng chip tạo ra một biểu tượng nhân đôi, đồng nghĩa với việc Thời gian phát sóng (Time on Air - ToA) bị kéo dài gấp đôi. Việc phát sóng chậm lại cho phép bộ thu tích lũy được nhiều năng lượng tín hiệu hơn, làm cải thiện Độ nhạy máy thu (Receiver Sensitivity) thêm trung bình khoảng $2.5 \text{ dB}$, giúp thiết bị có khả năng phát xuyên tường tốt hơn nhiều lần. Tuy nhiên, cái giá phải trả là Tốc độ bit (Bit Rate) giảm thảm hại và lượng điện năng rút ra từ viên pin tăng theo cấp số nhân trong một chu kỳ gửi. Do đó, SF7 thường được cấu hình cho các Node gần Gateway (môi trường Line-of-Sight), trong khi SF10 hoặc SF12 buộc phải sử dụng cho các Node bị khuất sâu bên trong các góc tường bê tông dày.
+\paragraph{Băng thông (Bandwidth - BW):}
+Băng thông xác định độ rộng của dải phổ mà tín hiệu chirp quét qua. Trong băng tần phổ biến 433MHz, BW thường được thiết lập ở 3 mức: 125 kHz, 250 kHz và 500 kHz. Thời gian để phát một biểu tượng (Symbol Duration - $T_s$) tỷ lệ thuận với hệ số trải phổ và tỷ lệ nghịch với Băng thông\cite{adelantado2017understanding}:
+\begin{equation}
+    {T_s = \frac{2^{SF}}{BW}}.
+\end{equation}
+Từ phương trình trên, nếu ta tăng $BW$ gấp đôi, thời gian truyền $T_s$ giảm đi một nửa, tốc độ mạng tăng nhanh. Nhưng theo định lý Shannon, băng thông càng rộng thì lượng nhiễu nhiệt (Thermal noise) lọt vào kênh truyền càng lớn, làm suy giảm nghiêm trọng tỷ số SNR, kéo theo việc giảm tầm xa truyền dẫn. Để tối đa hóa khả năng đâm xuyên cho các ứng dụng đo lường không yêu cầu tốc độ cao, BW 125 kHz luôn là lựa chọn tiêu chuẩn.
+\paragraph{Tỷ lệ mã hóa lỗi (Coding Rate - CR):}
+Đây là tham số đại diện cho kỹ thuật Sửa lỗi tiến (Forward Error Correction - FEC). Trong môi trường công nghiệp đầy sóng điện từ, các bit dữ liệu gửi đi rất dễ bị lật trạng thái (bit flip) do nhiễu. Thay vì yêu cầu thiết bị gửi lại toàn bộ gói tin khi bị lỗi (tốn pin vô ích), kỹ thuật FEC tự động chèn thêm các bit kiểm tra dư thừa (Redundant bits) vào dòng dữ liệu gốc dựa trên mã Hamming. Tham số $CR$ được tính bằng $\frac{4}{4+n}$, với $n \in \{1, 2, 3, 4\}$. Ví dụ, $CR = \frac{4}{5}$ nghĩa là cứ 4 bit dữ liệu thực tế, chip xử lý vô tuyến sẽ kẹp thêm 1 bit dự phòng để tính toán phát hiện sai lệch. Nếu $CR = \frac{4}{8}$, tỷ lệ dữ liệu thừa lên tới 50\%, khả năng tự hồi phục gói tin lỗi ở phía máy thu là cao nhất, nhưng độ dài chuỗi bit truyền đi tăng gấp đôi, làm giảm thời lượng pin của Node.
+\subsubsection{Mô hình toán học đánh giá Quỹ đường truyền (Link Budget) và Độ nhạy máy thu}
+Để đảm bảo hệ thống vô tuyến hoạt động xuyên suốt qua các tầng chuồng trại mà không bị mất tín hiệu (Packet Loss), các kỹ sư phải xây dựng một mô hình đánh giá năng lực đường truyền thông qua bài toán Quỹ đường truyền (Link Budget). Link Budget là tổng thể lượng hao hụt suy giảm tối đa (tính bằng Decibel - dB) mà tín hiệu có thể chịu đựng được trên đường bay từ anten phát đến anten thu, mà tại đó máy thu vẫn đủ sức giải mã được thông tin.
+
+Phương trình cân bằng Quỹ đường truyền tổng quát được xây dựng:
+\begin{equation}
+    {P_{RX} = P_{TX} + G_{TX} - L_{TX} - L_{FS} - L_{Misc} + G_{RX} - L_{RX}}.
+\end{equation}
+Cụ thể, các tham số kỹ thuật như sau:
+\begin{itemize}
+    \item $P_{RX}$: Công suất tín hiệu tối thiểu nhận được tại khối khuếch đại LNA của máy thu (dBm). Đây chính là ngưỡng sinh tử; nếu $P_{RX}$ tụt xuống dưới Độ nhạy máy thu ($S$), gói tin sẽ chìm hẳn vào hư vô.
+    \item $P_{TX}$: Công suất phát xạ RF do vi điều khiển cấu hình bơm vào đường mạch (ví dụ $+14 \text{ dBm}$ hoặc mức tối đa $+20 \text{ dBm}$). Phát công suất càng cao, pin càng mau cạn kiệt.
+    \item $G_{TX}, G_{RX}$: Hệ số khuếch đại (Độ lợi) của anten ở bên phát và bên thu (dBi). Trong dự án này, anten đẳng hướng lò xo thường có mức tăng ích khoảng $2.0 \text{ dBi}$ đến $3.0 \text{ dBi}$.
+    \item $L_{TX}, L_{RX}$: Tổn hao tĩnh trên vật liệu bảng mạch in (PCB) ở dạng đường dẫn sóng cao tần, tổn hao do bất đồng kháng (Impedance mismatch) tại cổng hàn SMA.
+    \item $L_{Misc}$: Tổng hợp các hệ số tổn hao tạp khác như tán xạ do mưa, sự suy hao hấp thụ do đi qua vật cản là thân nhiệt hoặc hơi nước dày đặc trong chuồng trại chăn nuôi.
+    \item $L_{FS}$: Suy hao không gian tự do (Free Space Path Loss) - yếu tố ăn mòn năng lượng tàn khốc nhất.
+\end{itemize}
+Tham chiếu quan trọng nhất để đánh giá sức mạnh hệ thống không phải là công suất phát, mà là Độ nhạy máy thu (Receiver Sensitivity - $S$). Một máy thu có độ nhạy $-130 \text{ dBm}$ sẽ tốt hơn hàng ngàn lần so với máy thu chỉ có độ nhạy $-100 \text{ dBm}$. Phương trình kinh điển tính toán giới hạn độ nhạy nhiệt động học của một hệ thống giải điều chế LoRa được minh họa chi tiết\cite{bor2016do}:
+\begin{equation}
+    {S = P_{Thermal} + NF + SNR_{limit}}.
+\end{equation}
+\begin{equation}
+    {S = -174 + 10 \log_{10}(BW) + NF + SNR_{limit}}.
+\end{equation}
+Trong đó: 
+\begin{itemize}
+    \item Mức $-174 \text{ dBm/Hz}$ là nhiễu nền nhiệt (Thermal Noise Floor). Đây là giới hạn vật lý tuyệt đối sinh ra do sự chuyển động nhiệt hỗn loạn của các hạt electron bên trong vật dẫn đồng của anten tại nhiệt độ phòng (khoảng $290K$ hoặc $17^\circ C$). Bất kỳ thiết bị vô tuyến nào trên Trái Đất cũng phải chịu một mức nhiễu nền tối thiểu này.
+    \item Mảnh ghép $10 \log_{10}(BW)$ là tích phân nhiễu phân bố trên toàn dải băng thông hoạt động. Băng thông càng rộng, miệng phễu hút nhiễu nền càng lớn.
+    \item $NF$ (Noise Figure - Hệ số nhiễu phần cứng): Các linh kiện bán dẫn (Transistor) bên trong mạch khuếch đại tần số thấp (LNA) của bản thân máy thu cũng tạo ra nhiễu nhiệt nội bộ. Đối với chip IC LoRa, hệ số này thường dao động ở mức $6 \text{ dB}$.
+    \item $SNR_{limit}$ (Tỷ số tín hiệu trên nhiễu cực hạn): Đây là điểm kỳ diệu của thuật toán CSS. Đối với các chuẩn viễn thông cũ, $SNR$ bắt buộc phải là số dương (tín hiệu phải mạnh hơn nhiễu từ 5 đến 10 lần mới đọc được). Nhưng đối với LoRa, nhờ bộ lọc phối hợp toán học, máy thu có thể khôi phục dữ liệu ở mức SNR âm sâu. Với cấu hình SF12, LoRa đòi hỏi SNR chỉ cần đạt $-20 \text{ dB}$.
+\end{itemize}
+Thế các tham số vào phương trình cho cấu hình tối đa năng lực đâm xuyên ($BW = 125 \text{ kHz}$, $SF = 12$): $S = -174 + 10 \log_{10}(125000) + 6 - 20 = -137 \text{ dBm}$
+
+Một quỹ đường truyền khổng lồ (từ cực đại phát $+20 \text{ dBm}$ đến cực tiểu nhận $-137 \text{ dBm}$) cung cấp cho kiến trúc hệ thống một ngân sách năng lượng lên tới $157 \text{ dB}$, thừa sức xuyên thủng các lớp bê tông cốt thép nhiều tầng mà không cần thêm bộ khuyếch đại nào.
+\subsubsection{Suy hao truyền rỗng (FSPL) và mô hình nhiễu vô tuyến trong công nghiệp \cite{rappaport2002wireless}}
+Ngay cả khi truyền trong môi trường chân không tuyệt đối không có hạt bụi nào, năng lượng sóng điện từ vẫn bị suy giảm thảm hại do sự lan tỏa cầu của mặt sóng. Năng lượng phát ra từ anten đẳng hướng (Isotropic) lan truyền dưới dạng các bề mặt hình cầu đồng tâm, và diện tích mặt cầu tăng tỷ lệ thuận với bình phương bán kính. Do đó, mật độ công suất trên một đơn vị diện tích suy giảm theo luật bình phương nghịch đảo.
+
+Mô hình này được mô tả bằng định luật Friis thông qua phương trình Suy hao không gian tự do (Free Space Path Loss - $FSPL$)\cite{rappaport2002wireless}:
+\begin{equation}
+    {FSPL = \left( \frac{4\pi d}{\lambda} \right)^2}.
+\end{equation}
+Chuyển đổi sang thang đo Decibel (logarit cơ số 10) để tiện cho việc cộng trừ trong ngân sách đường truyền, và thay thế bước sóng $\lambda = \frac{c}{f}$ (với $c$ là vận tốc ánh sáng $\approx 3 \times 10^8 \text{ m/s}$), ta được công thức thực hành:
+\begin{equation}
+    {FSPL (dB) = 20 \log_{10}(d) + 20 \log_{10}(f) + 32.44}.
+\end{equation}
+Trong công thức trên, $d$ là khoảng cách truyền sóng (đo bằng km) và $f$ là tần số hoạt động trung tâm (đo bằng MHz). Dựa vào công thức này, ta có thể chứng minh tính chất vật lý của tần số: ở cùng một khoảng cách $d$, sóng mang tần số thấp (như 433 MHz) sẽ bị suy hao ít hơn rất nhiều so với sóng mang tần số cao (như WiFi 2400 MHz). Đây là nền tảng lý thuyết sống còn giải thích tại sao đề tài lại chọn dải tần Sub-GHz cho hệ thống IoT nông nghiệp.
+
+Tuy nhiên, trong thế giới thực của chuồng trại chăn nuôi, sóng vô tuyến hầu như không bao giờ bay thẳng mượt mà trong không gian tự do (Line-of-Sight - LOS). Sóng sẽ va đập vào bề mặt sàn bê tông, mái tôn kẽm và các máng ăn kim loại, tạo ra hiện tượng phản xạ, khúc xạ và tán xạ đa hướng. Các tia sóng dội này, di chuyển theo nhiều quỹ đạo dài ngắn khác nhau, sẽ đến anten thu ở các khoảng thời gian khác nhau (Multipath effect).
+
+Ngoài ra, để đảm bảo liên kết vô tuyến LOS được coi là "hoàn toàn sạch", không chỉ cần một đường thẳng quang học không vật cản nối giữa hai anten, mà còn yêu cầu một khoảng không gian hình chóp nón xung quanh đường thẳng đó không bị xâm phạm. Khoảng không gian này được gọi là Vùng Fresnel (Fresnel Zone). Bán kính của vùng Fresnel thứ nhất $R_1$ tại điểm giữa đường truyền (nơi phình to nhất) được tính theo nguyên lý sóng quang học~\cite{rappaport2002wireless}:
+\begin{equation}
+    {R_1 = 17.32 \times \sqrt{\frac{d}{4f}}}.
+\end{equation}
+Nếu các chướng ngại vật (như ngọn cây hoặc dầm thép) lấn sâu vào hơn 40\% diện tích của Vùng Fresnel thứ nhất, hiện tượng nhiễu xạ (Diffraction loss) sẽ phát sinh tàn phá quỹ đường truyền một cách tiêu cực. Do đó, việc am hiểu mô hình suy hao FSPL và hiệu ứng đa đường (Multipath Fading) là điều kiện kiên quyết để nhóm nghiên cứu có thể thiết kế sơ đồ triển khai thực địa: quyết định độ cao treo anten vật lý của Node cảm biến, góc lắp đặt hộp thiết bị chống nước và các chiến lược khôi phục gói tin bằng thuật toán Điện toán biên trong trường hợp đường truyền bị gián đoạn cục bộ bởi nhiễu không gian.
+
+\subsection{Kiến trúc vi điều khiển và Hệ điều hành thời gian thực (RTOS)}
+Trong kiến trúc truyền thống, một MCU 8-bit chỉ đảm nhận nhiệm vụ thu thập tín hiệu tuần tự. Tuy nhiên, khi trở thành một Node Điện toán biên, MCU phải gánh vác đồng thời hàng loạt tác vụ nặng nề: tiền xử lý số liệu môi trường, chạy thuật toán Máy trạng thái hữu hạn (FSM) để ra quyết định, giao tiếp vô tuyến nối tiếp, quản lý bộ nhớ cục bộ và mã hóa dữ liệu. Để giải quyết bài toán đa nhiệm phức tạp này trên một thiết bị bị giới hạn nghiêm ngặt về tài nguyên, việc từ bỏ phương pháp lập trình tuần tự truyền thống và áp dụng Hệ điều hành thời gian thực (Real-Time Operating System - RTOS) là một bước tiến bắt buộc về mặt kiến trúc.
+\subsubsection{Giới hạn của mô hình lập trình vòng lặp tuần tự}
+Trong kỹ thuật lập trình hệ thống nhúng cơ bản (đặc trưng bởi nền tảng Arduino hay PIC sơ khai), kiến trúc phần mềm thường được xây dựng dựa trên mô hình Vòng lặp siêu cấp (Super-loop Architecture), thường được biết đến qua hàm while(1) hoặc loop(). Cơ chế hoạt động của mô hình này là vi điều khiển sẽ thực thi các khối lệnh một cách tuần tự từ trên xuống dưới: đọc cảm biến nhiệt ẩm, đọc cảm biến khí gas, tính toán so sánh, sau đó đẩy dữ liệu ra cổng nối tiếp (UART) tới module vô tuyến, và kết thúc bằng một lệnh chờ (Delay) trước khi lặp lại chu trình.
+
+Hạn chế nhất của Super-loop Architecture là tính chất "Chặn" (Blocking) của luồng thực thi. Khi vi điều khiển giao tiếp với các cảm biến ngoại vi thông qua bus I2C (như quá trình đọc dữ liệu từ cảm biến nhiệt ẩm SHT31 hoặc cảm biến ánh sáng BH1750), nếu xảy ra hiện tượng nhiễu điện từ trường (EMI) trong môi trường chuồng trại làm mất tín hiệu xung nhịp đồng bộ (SCL), toàn bộ bus I2C có thể rơi vào trạng thái treo (Deadlock). Tại thời điểm đó, vi xử lý sẽ bị kẹt vĩnh viễn ở dòng lệnh chờ phản hồi (Polling) từ I2C \cite{white2011making}.
+
+Hệ quả của việc này đối với Điện toán biên là sự vi phạm hoàn toàn các ràng buộc về thời gian. Giả sử trong lúc vi xử lý đang bị treo ở hàm đọc dữ liệu ánh sáng, nồng độ khí độc NH3 và nhiệt độ môi trường đột ngột tăng vượt mức nguy hiểm. Vi điều khiển không thể thoát khỏi hàm bị treo để tiến xuống dòng lệnh bên dưới nhằm kích hoạt chân GPIO điều khiển đóng mạch rơ-le làm mát. Ngay cả khi không xảy ra lỗi, việc một tác vụ truyền thông vô tuyến (thường mất từ hàng chục đến hàng trăm mili-giây) chiếm dụng CPU cũng làm cho hệ thống bị mù tạm thời trước các biến động của môi trường. Nói cách khác, kiến trúc Super-loop thiếu khả năng ưu tiên hóa tác vụ (Task Prioritization), khiến nó hoàn toàn không đủ độ tin cậy để ứng dụng trong các hệ thống giám sát an toàn sinh học có nguy cơ thiệt hại lớn.
+
+\subsubsection{Nguyên lý hoạt động của Hệ điều hành thời gian thực (FreeRTOS)}
+Để phá vỡ giới hạn tuyến tính của Super-loop, Hệ điều hành thời gian thực (RTOS), cụ thể là FreeRTOS, được tích hợp trực tiếp vào nhân của vi điều khiển. Khác với các hệ điều hành mục đích chung (General-Purpose OS như Windows hay Linux) được thiết kế để tối đa hóa thông lượng (Throughput) chung của hệ thống, RTOS được thiết kế với mục tiêu tối thượng là tính tất định (Determinism) – khả năng đảm bảo một tác vụ sẽ được thực thi trong một khoảng thời gian dự đoán được, bất kể khối lượng công việc hiện tại của hệ thống \cite{laplante2004real}.
+
+Nguyên lý cốt lõi của FreeRTOS dựa trên cơ chế Lập lịch ưu tiên độc chiếm (Preemptive Priority-based Scheduling). Thay vì một luồng duy nhất, mã nguồn được chia nhỏ thành các Tác vụ (Tasks) độc lập. Mỗi tác vụ được hệ điều hành cấp phát một vùng nhớ ngăn xếp (Stack Memory) riêng biệt và một Khối điều khiển tác vụ (Task Control Block - TCB). Mức độ ưu tiên (Priority) của mỗi tác vụ được kỹ sư gán cứng dựa trên tầm quan trọng của nó đối với sự an toàn của hệ thống.
+
+Thuật toán lập lịch của FreeRTOS hoạt động dựa trên một bộ định thời phần cứng tạo ra các ngắt chu kỳ (Tick Interrupts), thường được cấu hình ở tần số 1000 Hz (nghĩa là 1 mili-giây đánh dấu một nhịp). Tại mỗi nhịp Tick, Bộ lập lịch (Scheduler) sẽ kiểm tra danh sách các tác vụ đang ở trạng thái Sẵn sàng (Ready State). Toán học của quá trình Chuyển đổi ngữ cảnh (Context Switching) được diễn ra khi Scheduler phát hiện một tác vụ có mức ưu tiên cao hơn vừa được giải phóng khỏi trạng thái Chờ (Blocked State) – ví dụ: Task Điện toán biên vừa nhận được một tín hiệu ngắt báo hiệu nhiệt độ quá tải.
+
+Thời gian đáp ứng của hệ thống (System Response Time - $T_{res}$) trong một hệ thống RTOS được tính bằng phương trình vi mô:
+\begin{equation}
+    {T_{res} = T_{int} + T_{context} + T_{exec}}.
+\end{equation}
+Trong đó:
+\begin{itemize}
+    \item $T_{int}$: Thời gian trễ ngắt phần cứng (Interrupt Latency) – khoảng thời gian từ lúc có tín hiệu vật lý đến khi CPU nhận biết.
+    \item $T_{context}$: Thời gian chuyển đổi ngữ cảnh (Context Switch Time). CPU phải lưu toàn bộ các thanh ghi (Registers) của tác vụ đang chạy vào vùng Stack của nó, sau đó tải các thanh ghi của tác vụ ưu tiên cao từ Stack của tác vụ đó vào CPU.
+    \item $T_{exec}$: Thời gian thực thi thuật toán logic của tác vụ mới.
+\end{itemize}
+Nhờ cơ chế Preemptive, hệ thống không bao giờ bị nghẽn mạng tại một cảm biến hỏng. Nếu Task đọc I2C bị treo, Task Điều khiển biên (với độ ưu tiên cao nhất) vẫn luôn được Scheduler trao quyền chiếm đoạt CPU (Preempt) ngay lập tức để ngắt điện toàn bộ hệ thống hoặc bật hệ thống làm mát khẩn cấp, đảm bảo Ràng buộc độ trễ (Latency Constraint) luôn nhỏ hơn 50ms.
+
+% --- Bổ sung phần RTOS ---
+\subsubsection{Vòng đời và các trạng thái của một Tác vụ (Task Lifecycle)}
+Để bộ lập lịch có thể điều phối tất định, mỗi Tác vụ trong FreeRTOS tại mọi thời điểm luôn nằm ở một trong bốn trạng thái logic, và việc dịch chuyển giữa các trạng thái này được kích hoạt bởi các sự kiện xác định. Hiểu rõ vòng đời này (Hình \ref{fig:rtos_task_lifecycle}) là điều kiện tiên quyết để thiết kế đúng mức ưu tiên và cơ chế đồng bộ ở các chương sau.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{Thuc_Hanh/Image/TaskCycleFreeRTOS.pdf}
+    \caption{Sơ đồ vòng đời và bốn trạng thái của một Tác vụ trong FreeRTOS}
+    \label{fig:rtos_task_lifecycle}
+\end{figure}
+% \begin{figure}[H]
+% \centering
+% \begin{tikzpicture}[
+%     >=Stealth,
+%     st/.style={rectangle, rounded corners=3pt, draw, thick, align=center,
+%                minimum width=2.7cm, minimum height=1.05cm},
+%     lb/.style={font=\scriptsize\itshape, align=center, fill=white, inner sep=1.5pt}
+% ]
+% \node[st, fill=blue!8]    (ready) at (-3.2,2)    {\textbf{SẴN SÀNG}\\(Ready)};
+% \node[st, fill=green!18]  (run)   at (3.2,2)     {\textbf{ĐANG CHẠY}\\(Running)};
+% \node[st, fill=orange!20] (block) at (3.2,-1.7)  {\textbf{BỊ CHẶN}\\(Blocked)};
+% \node[st, fill=black!12]  (susp)  at (-3.2,-1.7) {\textbf{TẠM DỪNG}\\(Suspended)};
+
+% \draw[->,thick] (ready) to[bend left=12]  node[lb,above]{Được điều phối\\(ưu tiên cao nhất)} (run);
+% \draw[->,thick] (run)   to[bend left=12]  node[lb,below]{Bị chiếm quyền /\\hết time-slice} (ready);
+% \draw[->,thick] (run)   to                node[lb,right]{Chờ sự kiện:\\Queue / Semaphore /\\vTaskDelay()} (block);
+% \draw[->,thick] (block) to[bend left=9]   node[lb,pos=0.55]{Sự kiện đến /\\hết timeout} (ready);
+% \draw[->,thick] (ready) to[bend left=15]  node[lb,left]{vTaskSuspend()} (susp);
+% \draw[->,thick] (susp)  to[bend left=15]  node[lb,right]{vTaskResume()} (ready);
+% \end{tikzpicture}
+% \caption{Sơ đồ vòng đời và bốn trạng thái của một Tác vụ trong FreeRTOS cùng các sự kiện chuyển trạng thái}
+% \label{fig:rtos_task_lifecycle}
+% \end{figure}
+
+Trạng thái \textit{Đang chạy} (Running) là khi mã của tác vụ thực sự được CPU thực thi; trên một lõi đơn, tại mỗi thời điểm chỉ có duy nhất một tác vụ ở trạng thái này. Trạng thái \textit{Sẵn sàng} (Ready) gồm các tác vụ đã đủ điều kiện chạy và đang xếp hàng chờ CPU, nhưng chưa được chọn vì có tác vụ khác ưu tiên cao hơn (hoặc bằng) đang chiếm lõi. Trạng thái \textit{Bị chặn} (Blocked) là khi tác vụ chủ động nhường CPU để chờ một sự kiện -- chẳng hạn chờ dữ liệu trong Hàng đợi, chờ một Cờ hiệu, hoặc chờ hết một khoảng trễ \texttt{vTaskDelay()}; điểm mấu chốt là tác vụ bị chặn \emph{không} tiêu tốn chu kỳ CPU, khác hẳn vòng lặp chờ bận (busy-wait) của super-loop. Cuối cùng, trạng thái \textit{Tạm dừng} (Suspended) là khi tác vụ bị đưa ra khỏi lịch trình một cách tường minh bằng \texttt{vTaskSuspend()} và chỉ quay lại khi được \texttt{vTaskResume()}.
+
+
+% --- Hết bổ sung phần RTOS ---
+
+\subsubsection{Quản lý đa nhiệm và cơ chế phân luồng (Core Pinning) trên MCU}
+ Trong khi các hệ thống nhúng thông thường chỉ có một nhân (Core) phải liên tục chuyển đổi qua lại giữa các tác vụ, dòng vi điều khiển 32-bit Xtensa LX6 cung cấp hai nhân vật lý độc lập có khả năng thực thi hai luồng lệnh song song cùng một chu kỳ thời gian thực \cite{espressif2023esp32}.
+
+Sử dụng bộ API của FreeRTOS (như xTaskCreatePinnedToCore), hệ thống phần mềm của Node có thể ép cứng (Pinning) các tác vụ cụ thể vào một trong hai nhân vật lý: Core 0 (được gọi là PRO\_CPU) và Core 1 (được gọi là APP\_CPU).
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\linewidth]{Thuc_Hanh/Image/esp32_dual.pdf}
+    \caption{Kiến trúc phân chia tác vụ trên bộ xử lý Dual-core của ESP32}
+    \label{Hình 2.6}
+\end{figure}
+Hình \ref{Hình 2.6} minh họa một kiến trúc phân bổ tài nguyên tinh tế nhằm cô lập các tác vụ có tính chất cản trở lẫn nhau. Core 0 (PRO\_CPU) được giao phó toàn bộ khối lượng công việc liên quan đến giao tiếp ngoại vi giao thức vô tuyến (UART) và toán học mã hóa (AES-128). Bản chất của giao tiếp UART với module LoRa họ E32 là quá trình truyền nhận nối tiếp tốc độ tương đối chậm (thường ở mức 9600 bps). Nếu CPU phải ngồi chờ từng byte truyền đi, nó sẽ lãng phí hàng ngàn chu kỳ máy (CPU cycles). Do đó, Core 0 sẽ ôm toàn bộ các ngắt vô tuyến và xử lý các hàm nhân ma trận của thuật toán AES-128.
+
+Trong khi đó, Core 1 (APP\_CPU) được giữ hoàn toàn "sạch sẽ" và chuyên biệt hóa để phục vụ ứng dụng Điện toán biên. Core 1 đóng vai trò là "bộ não" thực thi Máy trạng thái hữu hạn (FSM). Nó liên tục rà soát dữ liệu từ cảm biến SHT31 và MQ-135, đối chiếu với ma trận ngưỡng nhiệt-ẩm. Bởi vì Core 1 không bao giờ bị ngắt quãng bởi các tín hiệu vô tuyến LoRa rác rưởi từ bên ngoài mạng dội vào (vì ngắt vô tuyến đã bị Core 0 chặn đứng và xử lý), thời gian thực thi của thuật toán FSM để ra lệnh đóng mạch Rơ-le bảo vệ là tuyệt đối mang tính tất định (Deterministic), đảm bảo độ trễ (Edge Latency) luôn ghim chặt dưới mức 50 mili-giây. Để hai nhân này có thể chia sẻ dữ liệu môi trường cho nhau một cách an toàn mà không gây ra hiện tượng Cạnh tranh dữ liệu (Race Condition), hệ thống sử dụng cơ chế Giao tiếp liên tiến trình (IPC) của FreeRTOS thông qua các Hàng đợi (Queues) và Cờ hiệu độc quyền (Mutexes).
+
+% --- Bổ sung phần RTOS ---
+\subsubsection{Mô hình đa xử lý đối xứng (SMP) và chiến lược ghim lõi}
+Cần phân định rõ về mặt học thuật giữa hai mô hình điều phối trên vi xử lý đa nhân. Trong mô hình \textit{Đa xử lý bất đối xứng} (Asymmetric Multiprocessing -- AMP) cổ điển, mỗi lõi chạy một thực thể hệ điều hành riêng biệt. Ngược lại, nhân FreeRTOS được port cho ESP-IDF là một nhân \textit{Đa xử lý đối xứng} (Symmetric Multiprocessing -- SMP): một bộ lập lịch duy nhất quản lý chung danh sách tác vụ Sẵn sàng và phân phối chúng cho cả hai lõi (PRO\_CPU và APP\_CPU) \cite{espressif_freertos_idf}. Trong mô hình SMP, mỗi tác vụ mang một thuộc tính core affinity: nếu để mặc định không ghim (\texttt{tskNO\_AFFINITY}), tác vụ có thể được lập lịch trên bất kỳ lõi nào còn rảnh, giúp cân bằng tải tự động; nếu ghim cứng vào một lõi cụ thể thông qua \texttt{xTaskCreatePinnedToCore()}, tác vụ chỉ chạy trên lõi đó.
+
+Đề tài lựa chọn chiến lược áp đặt một kỷ luật phân hoạch kiểu AMP lên trên nền nhân SMP. Lý do là vì lập lịch SMP tự do, dù tối ưu thông lượng tổng, lại làm tăng tính bất định: một tác vụ có thể di trú (migrate) giữa hai lõi, gây ra chi phí mất hiệu lực bộ nhớ đệm (cache invalidation) và làm khó dự đoán thời điểm thực thi. Bằng cách ghim cứng tác vụ FSM an toàn vào một lõi chuyên biệt, đề tài đánh đổi một phần thông lượng để thu về tính tất định (determinism) -- yếu tố sống còn đối với ràng buộc trễ điều khiển dưới $50\,\text{ms}$.
+
+\subsubsection{Loại trừ tương hỗ trên bus I2C và cơ chế kế thừa ưu tiên}
+Trong số các tài nguyên dùng chung, bus I2C là điểm tranh chấp điển hình và nguy hiểm nhất của hệ thống: bốn thiết bị (cảm biến SHT31, BMP180, BH1750 và đồng hồ thời gian thực DS3231) cùng treo trên một đôi dây SDA/SCL duy nhất. Một giao dịch I2C là một chuỗi nguyên tử gồm điều kiện START, gửi địa chỉ, trao đổi nhiều byte và điều kiện STOP. Nếu một tác vụ đang đọc dở SHT31 thì bị một tác vụ khác chiếm quyền (preempt) để khởi tạo một giao dịch tới DS3231, hai chuỗi xung sẽ chồng lấn trên cùng đường dây, phá vỡ trạng thái máy của bus và dẫn đến dữ liệu rác hoặc tệ hơn là khóa cứng bus (bus lockup). Đây chính là một dạng Cạnh tranh dữ liệu (Race Condition) ở mức phần cứng.
+
+Giải pháp là bảo vệ mỗi giao dịch bằng một Mutex. Trước khi truy cập bus, tác vụ phải giành quyền sở hữu Mutex (\texttt{xSemaphoreTake}); sau khi hoàn tất giao dịch mới trả lại (\texttt{xSemaphoreGive}). Cần nhấn mạnh sự khác biệt giữa Mutex và Cờ hiệu nhị phân (Binary Semaphore): tuy cùng có hai trạng thái, nhưng Mutex có khái niệm \textit{quyền sở hữu} (ownership -- chỉ tác vụ đã lấy mới được trả) và quan trọng hơn là tích hợp cơ chế \textit{kế thừa ưu tiên} (priority inheritance), nên Mutex mới là công cụ đúng để bảo vệ tài nguyên, còn Binary Semaphore chỉ nên dùng để báo hiệu sự kiện.
+
+Cơ chế kế thừa ưu tiên ra đời để chống lại hiện tượng Priority Inversion được minh họa ở Hình \ref{fig:rtos_priority_inheritance}.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\linewidth]{Thuc_Hanh/Image/Mutex.pdf}
+    \caption{Cơ chế kế thừa ưu tiên của Mutex}
+    \label{fig:rtos_priority_inheritance}
+\end{figure}
+Một tác vụ ưu tiên thấp (L) đang giữ Mutex của bus I2C thì bị tác vụ ưu tiên cao (H) đòi cùng Mutex; H buộc phải chờ. Nếu lúc này một tác vụ ưu tiên trung bình (M) -- không liên quan đến bus -- giành CPU và chạy dài, nó sẽ vô tình chặn L hoàn thành giao dịch, khiến H (ưu tiên cao nhất) bị chặn vô thời hạn bởi M (ưu tiên thấp hơn). FreeRTOS giải quyết bằng cách: khi H chặn trên Mutex mà L đang giữ, hệ điều hành tạm thời \textit{nâng} ưu tiên của L lên bằng ưu tiên của H, nhờ đó L không bị M chặn, hoàn tất nhanh giao dịch và trả Mutex; sau đó ưu tiên của L được khôi phục về mức cũ. Cơ chế này \textit{giới hạn cận trên} (bound) thời gian chặn của H đúng bằng độ dài một giao dịch I2C, bảo toàn tính tất định của hệ thống.
+
+% \begin{figure}[H]
+% \centering
+% \begin{tikzpicture}[font=\scriptsize, >=Stealth]
+% % --- truc thoi gian va lan tac vu ---
+% \foreach \y/\name in {0/{L (thấp)}, 1.3/{M (trung bình)}, 2.6/{H (cao)}}{
+%     \node[anchor=east] at (-0.15,\y+0.25) {\name};
+%     \draw[->,gray] (0,\y) -- (10.6,\y);
+% }
+% \draw[->] (0,-0.6) -- (10.6,-0.6) node[anchor=west,black]{$t$};
+% % --- moc thoi gian (duong dut) ---
+% \foreach \x in {1,2,3,4,5,7}{ \draw[dashed,black!30] (\x,-0.6) -- (\x,3.2); }
+% % --- khoi thuc thi cua L ---
+% \fill[blue!25,draw=black] (1,0) rectangle (2,0.5);          % L chay binh thuong
+% \fill[blue!25,draw=black] (2,0) rectangle (3,0.5);          % L trong CS
+% \fill[red!35,draw=black]  (4,0) rectangle (5,0.5);          % L chay o uu tien ke thua
+% \node[font=\tiny] at (2.5,0.78) {giữ Mutex};
+% % --- khoi thuc thi cua H ---
+% \fill[green!30,draw=black] (3,2.6) rectangle (4,3.1);       % H chay
+% \draw[black!50] (4,2.6) rectangle (5,3.1);                  % H cho Mutex (rong)
+% \node[font=\tiny] at (4.5,2.85) {chờ Mutex};
+% \fill[green!30,draw=black] (5,2.6) rectangle (7,3.1);       % H chay trong CS sau khi lay Mutex
+% % --- khoi thuc thi cua M ---
+% \fill[orange!35,draw=black] (7,1.3) rectangle (9,1.8);      % M chay sau cung
+% % --- chu thich su kien ---
+% \draw[->] (2,1.05) -- (2,0.55); \node[font=\tiny,anchor=south] at (2,1.05) {Lock@t=2};
+% \draw[->] (5,1.05) -- (5,0.55); \node[font=\tiny,anchor=south] at (5,1.1) {Unlock@t=5};
+% \node[font=\tiny,red] at (4.5,-0.35) {Kế thừa ưu tiên: L chạy ở ưu tiên của H};
+% \end{tikzpicture}
+% \caption{Cơ chế kế thừa ưu tiên của Mutex giúp giới hạn thời gian chặn khi bảo vệ bus I2C dùng chung}
+% \label{fig:rtos_priority_inheritance}
+% \end{figure}
+% --- Hết bổ sung phần RTOS ---
+
+\subsubsection{Kiến trúc phân vùng bộ nhớ và cơ chế lưu trữ ngoại tuyến}
+Điện toán biên không chỉ bao hàm năng lực xử lý (Computing) mà còn đòi hỏi khả năng lưu trữ cục bộ (Local Storage). Đối với các thiết bị vi điều khiển nhúng, kiến trúc bộ nhớ là sự kết hợp giữa bộ nhớ truy cập ngẫu nhiên tĩnh/động (SRAM) để lưu các biến thực thi tốc độ cao, và bộ nhớ Flash phi bay hơi (Non-volatile Flash Memory) để lưu trữ mã nguồn và dữ liệu vĩnh viễn. Trong dự án này, bộ nhớ Flash SPI của ESP32 (thường có dung lượng 4MB) đóng vai trò như một "đám mây mini" nội bộ.
+
+Việc lưu trữ dữ liệu thô trên bộ nhớ Flash không thể được thực hiện một cách hỗn loạn bằng cách ghi trực tiếp vào các địa chỉ ô nhớ vật lý, vì bộ nhớ Flash có cấu trúc đặc thù: dữ liệu chỉ có thể được ghi vào các ô nhớ đã bị xóa (Erased), và thao tác xóa chỉ có thể thực hiện theo từng Khối (Block/Sector) lớn chứ không thể xóa từng Byte. Để giải quyết rào cản phần cứng này, một Hệ thống tập tin chuyên biệt dành riêng cho bộ nhớ Flash SPI (ví dụ: SPIFFS hoặc LittleFS) được nhúng vào firmware \cite{espressif2023esp32}. Hệ thống tập tin này cung cấp các hàm API thao tác bậc cao như mở file (open), ghi file (write), đọc file (read) tương tự như trên hệ điều hành máy tính tiêu chuẩn, đồng thời nó tự động cân bằng hao mòn (Wear Leveling) bằng cách phân bổ đều các lệnh ghi/xóa ra khắp các sector, nhằm ngăn chặn việc một sector bị ghi đè quá số lần giới hạn (thường là 100,000 chu kỳ) dẫn đến hỏng bộ nhớ vật lý.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{Thuc_Hanh/Image/MemoryPartion.pdf}
+    \caption{Phân vùng bộ nhớ Flash và phân bổ không gian lưu trữ của ESP32}
+    \label{Hình 2.7}
+\end{figure}
+Hình \ref{Hình 2.7} minh chứng cho chiến lược kiến tạo cấu trúc phần mềm bền vững đối mặt với "Nghịch lý đám mây". Phân vùng spiffs chiếm đến 1.5 MB dung lượng, cung cấp không gian đủ lớn để chứa hàng ngàn bản ghi (Log records). Mỗi khi quá trình phát sóng vô tuyến thông qua module LoRa thất bại (do mất điện Gateway hoặc nhiễu sóng nghiêm trọng, hàm đọc chân trạng thái AUX báo lỗi), luồng phần mềm tại Node sẽ lập tức rẽ nhánh. Thay vì ném bỏ các giá trị môi trường cực kỳ quan trọng, một tác vụ Ghi ngoại tuyến sẽ mở file log trong phân vùng spiffs và gắn (append) chuỗi dữ liệu (bao gồm nhiệt độ, độ ẩm, nồng độ NH3 và Timestamp). Ngay khi kết nối vô tuyến được khôi phục, một luồng đồng bộ chạy nền ở độ ưu tiên thấp (Background Sync Task) sẽ từ từ đọc từng dòng trong file log này và gửi gối đầu (backlog) về cơ sở dữ liệu trung tâm để khôi phục tính toàn vẹn của biểu đồ thời gian lịch sử, đảm bảo nhà nông không bao giờ mất dấu dữ liệu do hạ tầng mạng đứt gãy.
+
+% --- Bổ sung phần RTOS ---
+\subsubsection{Quản lý vùng nhớ Stack và Heap trong FreeRTOS/ESP-IDF}
+Nếu bộ nhớ Flash lưu mã nguồn và dữ liệu bền vững thì bộ nhớ RAM (SRAM nội $\approx 512\,\text{KB}$ của ESP32-S3) mới là nơi diễn ra mọi hoạt động thực thi nóng, và nó được phân chia thành hai miền có bản chất hoàn toàn khác nhau: vùng ngăn xếp (Stack) cấp riêng cho từng tác vụ, và vùng nhớ động (Heap) dùng chung. Quản lý chặt chẽ hai miền này là điều kiện tiên quyết cho độ ổn định của một hệ thống chạy liên tục 24/7.
+
+Mỗi khi một tác vụ được tạo ra, FreeRTOS cấp cho nó một vùng Stack riêng cùng một Khối điều khiển tác vụ (TCB). Stack lưu các biến cục bộ, khung lời gọi hàm và toàn bộ thanh ghi được lưu lại tại mỗi lần Chuyển đổi ngữ cảnh. Việc định kích thước Stack là một bài toán đánh đổi sắc bén: cấp quá nhỏ sẽ gây tràn ngăn xếp (Stack Overflow) -- tác vụ ghi đè ra ngoài vùng cấp phát, làm hỏng bộ nhớ của tác vụ khác và sập hệ thống một cách khó tái hiện; cấp quá lớn lại lãng phí RAM vốn rất quý. Để giải bài toán này một cách định lượng thay vì phỏng đoán, FreeRTOS cung cấp hàm \texttt{uxTaskGetStackHighWaterMark()} trả về \textit{mức dùng đỉnh} (High-Water Mark) -- lượng Stack còn trống ít nhất mà tác vụ từng chạm tới kể từ khi khởi động; kết hợp với tùy chọn \texttt{configCHECK\_FOR\_STACK\_OVERFLOW} (đặt một "lính canh" -- canary value -- ở đáy Stack để phát hiện ghi tràn), kỹ sư có thể tinh chỉnh kích thước Stack vừa vặn với mức dư an toàn.
+
+Vùng Heap phục vụ cấp phát động (\texttt{malloc}/\texttt{free}). FreeRTOS chuẩn cung cấp năm sơ đồ quản lý Heap với các đánh đổi khác nhau: \texttt{heap\_1} chỉ cấp phát mà không bao giờ giải phóng (đơn giản, tất định nhất); \texttt{heap\_2} cho phép giải phóng nhưng không gộp các khối trống liền kề (dễ phân mảnh); \texttt{heap\_3} bọc \texttt{malloc}/\texttt{free} của thư viện C; \texttt{heap\_4} (mặc định phổ biến) có gộp khối trống (coalescing) để chống phân mảnh; và \texttt{heap\_5} mở rộng \texttt{heap\_4} cho nhiều vùng nhớ rời rạc. Trên nền tảng đó, ESP-IDF xây dựng một bộ cấp phát đa heap theo năng lực (capability-based allocator): mỗi lần cấp phát, lập trình viên khai báo loại bộ nhớ cần qua các cờ năng lực như \texttt{MALLOC\_CAP\_INTERNAL} (RAM nội tốc độ cao), \texttt{MALLOC\_CAP\_SPIRAM} (PSRAM ngoài dung lượng lớn), hay \texttt{MALLOC\_CAP\_DMA} (vùng nhớ truy cập được bằng DMA cho ngoại vi) \cite{espressif_mem_alloc}. Hai hàm chẩn đoán then chốt là \texttt{heap\_caps\_get\_free\_size()} (tổng dung lượng còn trống của một loại RAM) và \texttt{heap\_caps\_get\_largest\_free\_block()} (khối liền kề lớn nhất còn trống); chênh lệch giữa hai giá trị này chính là thước đo mức độ phân mảnh (fragmentation) của Heap.
+
+Từ phân tích trên rút ra nguyên tắc thiết kế cho firmware Node: hạn chế tối đa việc cấp phát/giải phóng động trong các luồng xử lý nóng (hot path) nhằm tránh phân mảnh và độ trễ bất định; ưu tiên cấp phát tĩnh hoặc cấp phát một lần lúc khởi tạo cho các cấu trúc dữ liệu có vòng đời dài (hàng đợi, bộ đệm gói tin); và giám sát liên tục dung lượng Heap trống để phát hiện sớm rò rỉ bộ nhớ (memory leak) -- một nguyên nhân hàng đầu khiến các thiết bị nhúng sập sau nhiều ngày chạy.
+% --- Hết bổ sung phần RTOS ---
+
+\subsubsection{Mô hình quản lý năng lượng phân tầng và cơ chế ngủ sâu (Deep Sleep)}
+Một kiến trúc Điện toán biên hoàn hảo về mặt thuật toán sẽ trở nên vô giá trị nếu nó tiêu thụ hết viên pin của thiết bị chỉ trong vài ngày. Năng lượng tiêu thụ tổng cộng của một Node vô tuyến ($E_{total}$) là tích phân của dòng điện theo thời gian, được chia thành ba dải trạng thái chính \cite{gomez2012overview}:
+\begin{equation}
+    {E_{total} = \int_{0}^{T} V_{bat} \cdot I(t) \, dt = V_{bat} \left( I_{active} \cdot T_{active} + I_{tx} \cdot T_{tx} + I_{sleep} \cdot T_{sleep} \right)}.
+\end{equation}
+Trong đó, $I_{tx}$ (dòng phát xạ vô tuyến) và $I_{active}$ (dòng hoạt động đỉnh của MCU) là những thông số khổng lồ (từ 100mA đến vài trăm mA). Vì các tác vụ tính toán nhanh (FSM) và phát LoRa chỉ diễn ra trong các khe thời gian chớp nhoáng ($T_{active}$ và $T_{tx}$ cực nhỏ), nên năng lượng hao hụt thực chất nằm ở khoảng thời gian hệ thống chờ đợi các chu kỳ kế tiếp ($T_{sleep}$ chiếm đến 99\% thời gian sống của thiết bị). Việc hạ gục chỉ số $I_{sleep}$ xuống mức tiệm cận 0 là chén thánh của kỹ thuật thiết kế phần cứng WSN.
+
+Vi điều khiển ESP32 được trang bị bộ điều khiển quản lý năng lượng tiên tiến (Power Management Unit) với nhiều dải Sleep khác nhau. Khi gọi hàm tiến vào chế độ Ngủ sâu (Deep Sleep), bộ điều khiển sẽ cắt đứt toàn bộ nguồn điện và xung nhịp (Clock gating) dẫn vào Core 0, Core 1, bộ nhớ SRAM chính và mọi khối ngoại vi kỹ thuật số tốc độ cao (SPI, I2C, UART). Chỉ có duy nhất một bộ Đồng hồ thời gian thực siêu tiết kiệm điện (RTC Controller) và khối nhớ ULP (Ultra-Low Power coprocessor) được giữ lại nguồn để duy trì chức năng đếm giờ (Timer) hoặc chờ kích hoạt ngắt vật lý từ chân cảm biến. Tại trạng thái này, dòng tiêu thụ bản thân của vi điều khiển giảm từ mức $40 \text{ mA}$ xuống chỉ còn xấp xỉ $10 \mu A$.
+
+Tuy nhiên, sự rò rỉ dòng điện tĩnh (Quiescent Current) từ các thành phần ngoại vi trên bo mạch (Module LoRa, các IC ổn áp, và đặc biệt là hệ thống nung nóng vi sợi của cảm biến khí gas MQ-135) vẫn sẽ hút cạn viên pin nếu không bị can thiệp. Để đạt được hiệu năng tối ưu tuyệt đối, kiến trúc phần cứng của Node đã được thiết kế sử dụng một MOSFET kênh P đóng vai trò làm Công tắc tải (Load Switch) \cite{instruments2016load}. Trước khi vi điều khiển gọi hàm Sleep, nó sẽ xuất mức logic đảo tới cực Cổng (Gate) của MOSFET, trực tiếp cắt đứt nguồn vật lý dẫn đến toàn bộ hệ sinh thái cảm biến. Sự kết hợp giữa Deep Sleep bằng phần mềm và Load Switch bằng phần cứng tạo ra một mô hình Hybrid Sleep hoàn mỹ, đè bẹp $I_{sleep}$ tổng thể của toàn hệ thống xuống dưới ngưỡng $20 \mu A$, kéo dài thời gian sống của khối pin 18650 lên đến nhiều tháng trời trong môi trường hoang dã.
+
+\subsection{Bảo mật trong mạng IoT và Thuật toán mã hóa AES-128}
+Sự lan tỏa sóng điện từ vô hình trong không gian mang lại sự tự do trong việc triển khai Mạng cảm biến không dây (WSN), nhưng đồng thời nó cũng biến tầng vật lý thành một môi trường mở hoàn toàn, phơi bày mọi dữ liệu nhạy cảm ra trước hàng loạt các mối đe dọa an ninh không gian mạng. Khác với kết nối cáp quang nơi việc nghe lén đòi hỏi phải can thiệp vật lý vào đường truyền, trong mạng vô tuyến công suất thấp như LoRa, bất kỳ đối tượng nào sở hữu một thiết bị thu phát vô tuyến cấu hình tương đương (cùng tần số, băng thông và hệ số trải phổ) đều có khả năng đánh chặn toàn bộ thông lượng thông tin. Đối với một hệ thống Điện toán biên tích hợp điều khiển các hệ thống cơ điện công suất lớn (quạt hút, rèm che nhiệt), một lỗ hổng bảo mật tại Node không đơn thuần dẫn đến sự rò rỉ dữ liệu, mà có thể biến thành một cuộc tấn công phá hoại hạ tầng vật lý (Cyber-Physical Attack).
+\subsubsection{Các bề mặt tấn công vô tuyến trong mạng cảm biến}
+Hệ thống WSN tại biên mạng nông nghiệp đối mặt với ba bề mặt tấn công thụ động và chủ động cốt lõi \cite{granjal2015security}:
+\begin{itemize}
+    \item Nghe lén và Rò rỉ thông tin (Eavesdropping / Sniffing): Kẻ tấn công thiết lập một Node giả mạo (Rogue Node) ngay bên ngoài hàng rào trang trại, thiết lập module LoRa ở chế độ liên tục nghe (Continuous Receive Mode). Nếu dữ liệu chuồng trại (nhiệt độ, độ ẩm, nồng độ khí) được gửi dưới dạng bản rõ (Plaintext), kẻ gian sẽ nắm bắt được toàn bộ chu trình sinh học của vật nuôi, từ đó thực hiện hành vi do thám thông tin bí mật thương mại về quy trình chăm sóc.
+    \item Sửa đổi và Làm giả dữ liệu (Data Tampering / Forgery): Nghiêm trọng hơn nghe lén, kẻ tấn công bắt được gói tin vô tuyến, giải mã, thay đổi nội dung tải trọng (ví dụ: sửa thông số "Nhiệt độ $25^\circ C$" thành "Nhiệt độ $45^\circ C$") và bơm ngược gói tin đó vào mạng. Việc làm giả mạo bản tin sẽ đánh lừa thuật toán Điện toán biên hoặc đánh lừa bộ ra quyết định tại Gateway, kích hoạt hệ thống làm mát hoặc sưởi ấm sai thời điểm, trực tiếp đe dọa tính mạng toàn đàn gia cầm. Yêu cầu tính Toàn vẹn dữ liệu (Data Integrity) là bắt buộc.
+    \item Tấn công phát lại (Replay Attack): Kẻ gian có thể không cần biết cách giải mã thông tin. Bằng cách sử dụng hệ thống Vô tuyến định nghĩa bằng phần mềm (Software Defined Radio - SDR), kẻ tấn công ghi lại dải tín hiệu số của một lệnh điều khiển hợp lệ từ Node (ví dụ: lệnh "Tắt hệ thống thông gió"). Sau đó, chờ đến khi nhiệt độ chuồng trại lên đỉnh điểm vào giữa trưa, chúng phát lại lệnh này liên tục với công suất cực cao. Hệ thống Gateway nhận được lệnh (hoàn toàn hợp lệ về mặt mã hóa) và mù quáng tắt hệ thống thông gió, gây ngạt thở cho vật nuôi.
+\end{itemize}
+\subsubsection{Nguyên lý của mật mã học khối đối xứng (Symmetric Block Cipher)}
+Để thiết lập tường lửa vững chắc ngăn chặn các bề mặt tấn công trên, mã hóa dữ liệu tại nguồn (tại vi điều khiển của Node) trước khi đưa xuống lớp vật lý LoRa là phương pháp duy nhất. Trong lý thuyết mật mã, có hai trường phái chính: Mã hóa bất đối xứng (Asymmetric Cryptography, ví dụ: RSA, ECC) và Mã hóa đối xứng (Symmetric Cryptography).
+
+Mã hóa bất đối xứng sử dụng cặp khóa Công khai/Bí mật, cung cấp mức độ phân quyền rất cao nhưng lại yêu cầu các phép toán số học mô-đun (Modular Arithmetic) khổng lồ trên số nguyên tố lớn, điều này làm vắt kiệt tài nguyên RAM nhỏ bé của MCU ESP32, tiêu tốn hàng giây đồng hồ cho một lần mã hóa, đi ngược lại Ràng buộc thời gian (Latency Constraint) của Điện toán biên. Ngược lại, Mã hóa đối xứng sử dụng chung một khóa bí mật (Secret Key) cho cả thao tác đóng và mở khóa. Cấu trúc toán học của chúng chủ yếu dựa trên các phép toán nhị phân đơn giản như XOR, dịch bit (Shift) và hoán vị (Permutation), mang lại tốc độ thực thi nhanh như chớp và tiêu tốn rất ít chu kỳ lệnh, biến nó thành lựa chọn hoàn hảo nhất cho WSN \cite{roman2011securing}.
+\subsubsection{Cấu trúc toán học của chuẩn mã hóa AES-128}
+Chuẩn mã hóa tiên tiến (Advanced Encryption Standard - AES) được Viện Tiêu chuẩn và Công nghệ Quốc gia Hoa Kỳ (NIST) công bố là thuật toán mã hóa khối (Block cipher) tiêu chuẩn toàn cầu, dựa trên cơ sở thuật toán Rijndael \cite{daemen2013design}. AES-128 sử dụng một khóa có độ dài 128 bit (16 bytes) để mã hóa một khối dữ liệu thô (Plaintext) cũng có kích thước 128 bit.
+
+Khối dữ liệu 16 bytes đầu vào được tổ chức thành một ma trận trạng thái (State Matrix) $4 \times 4$. Để biến đổi bản rõ thành một bản mã (Ciphertext) hoàn toàn không có tính quy luật thống kê, AES-128 áp dụng quá trình biến đổi lặp đi lặp lại qua 10 vòng (Rounds). Ngoại trừ vòng cuối cùng bị lược bỏ một bước, mỗi vòng lặp thực thi một trình tự gồm 4 hàm toán học phi tuyến tính và tuyến tính đan xen, hoạt động chủ yếu trên nền tảng của toán học Trường hữu hạn Galois $GF(2^8)$ với đa thức bất khả quy $m(x) = x^8 + x^4 + x^3 + x + 1$.
+
+AES-128 sử dụng bốn phép toán chính như trong Hình \ref{Hình 2.8} để thực hiện việc mã hóa và giải mã dữ liệu: SubBytes, ShiftRows, MixColumns và AddRoundKey. Mỗi phép toán này có vai trò quan trọng trong việc bảo vệ dữ liệu khỏi việc bị bóc lột thông tin. SubBytes giúp tạo ra sự thay đổi ngẫu nhiên trong dữ liệu, trong khi ShiftRows giúp phân tán dữ liệu hơn và MixColumns giúp phân tán các thay đổi ngẫu nhiên hơn. Cuối cùng, AddRoundKey giúp xác nhận rằng dữ liệu đã được mã hóa một cách an toàn.
+
+Sự phối hợp chặt chẽ của bốn phép toán này trong mỗi vòng lặp tạo nên cốt lõi bảo mật của thuật toán AES. Chính kiến trúc đa tầng này đã giúp AES an toàn trước hầu hết các phương pháp thám mã hiện đại. 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\linewidth]{Thuc_Hanh/Image/aes128.pdf}
+    \caption{Biến đổi toán học của một vòng lặp trong thuật toán AES-128}
+    \label{Hình 2.8}
+\end{figure}
+
+Hàm thay thế byte (SubBytes): Đây là thành phần phi tuyến tính duy nhất của AES. Mỗi byte trong ma trận trạng thái được thay thế bằng một byte khác dựa trên một Bảng tra cứu S-box (Substitution-box). Phép thay thế này thực chất là việc tìm phần tử nghịch đảo nhân của byte đó trong trường $GF(2^8)$, sau đó nhân nó với một ma trận affine và cộng XOR với một hằng số cố định.
+
+Hàm dịch hàng (ShiftRows): Hàm này thực hiện phép hoán vị đơn giản. Hàng đầu tiên của ma trận trạng thái giữ nguyên. Hàng thứ hai dịch vòng (cyclic shift) sang trái 1 byte, hàng thứ ba dịch trái 2 bytes, và hàng thứ tư dịch trái 3 bytes.
+
+Hàm trộn cột (MixColumns): Đây là trung tâm của phép toán Khuếch tán (Diffusion) gây ra hiệu ứng tuyết lở (Avalanche Effect). Mỗi cột của ma trận trạng thái (được xem như một đa thức bậc 3 với các hệ số trong $GF(2^8)$) được nhân với một đa thức tĩnh $a(x) = \{03\}x^3 + \{01\}x^2 + \{01\}x + \{02\} \bmod{x^4+1}$. Phép toán nhân ma trận này có dạng:
+\begin{equation}
+\begin{bmatrix}
+s'_{0,c} \\
+s'_{1,c} \\
+s'_{2,c} \\
+s'_{3,c}
+\end{bmatrix}
+=
+\begin{bmatrix}
+02 & 03 & 01 & 01 \\
+01 & 02 & 03 & 01 \\
+01 & 01 & 02 & 03 \\
+03 & 01 & 01 & 02
+\end{bmatrix}
+\begin{bmatrix}
+s_{0,c} \\
+s_{1,c} \\
+s_{2,c} \\
+s_{3,c}
+\end{bmatrix}
+\end{equation}
+% \begin{bmatrix} s'_{0,c} \\ s'_{1,c} \\ s'_{2,c} \\ s'_{3,c} \end{bmatrix} $=$ \begin{bmatrix} 02 & 03 & 01 & 01 \\ 01 & 02 & 03 & 01 \\ 01 & 01 & 02 & 03 \\ 03 & 01 & 01 & 02 \end{bmatrix} \begin{bmatrix} s_{0,c} \\ s_{1,c} \\ s_{2,c} \\ s_{3,c} \end{bmatrix}
+
+Sự kết hợp giữa ShiftRows và MixColumns đảm bảo rằng nếu một bit bất kỳ ở đầu vào bị đổi trạng thái, thì sau 10 vòng, trung bình một nửa số bit ở đầu ra sẽ thay đổi, khiến mọi thuật toán đoán mật khẩu theo tần suất thống kê trở nên vô vọng.
+
+Hàm cộng khóa vòng (AddRoundKey): Ma trận trạng thái hiện tại sẽ được thực hiện phép toán cộng XOR từng bit với Khóa của vòng đó (Round Key). Khóa vòng được sinh ra từ Khóa bí mật (Symmetric Key) ban đầu thông qua Bộ sinh khóa (Key Expansion Schedule).
+ 
+Thông qua việc nhúng thư viện mật mã tiêu chuẩn phần mềm (như mbedtls hoặc thư viện tăng tốc phần cứng bên trong ESP32), các gói tin môi trường và trạng thái FSM từ Node trước khi được đẩy qua module LoRa E32 bằng cổng nối tiếp UART sẽ bị mã hóa thành các đoạn chuỗi thập lục phân hỗn độn vô nghĩa. Ngay cả khi trạm nghe lén bắt được sóng ở băng tần 433 MHz, việc đọc mã là bất khả thi nếu không nắm giữ khóa 128-bit lưu ẩn sâu trong phân vùng tĩnh của thiết bị.
+\subsubsection{Cơ chế đồng bộ thời gian thực (Timestamp) và phòng chống tấn công phát lại}
+AES-128 giải quyết xuất sắc tính Bảo mật (Confidentiality), nhưng nó bị khuất phục trước kỹ thuật Tấn công phát lại (Replay Attack). Để vá lỗ hổng nghiêm trọng này, một giao thức bảo mật không gian thời gian (Temporal Security) phải được nhúng trực tiếp vào cấu trúc bản tin tại tầng Ứng dụng trước khi bản tin này bị đẩy qua bộ mã hóa AES.
+Phương pháp tối ưu và ít tiêu hao băng thông nhất là ứng dụng cơ chế Nhãn thời gian (Timestamp) thay vì sử dụng cơ chế Hỏi-Đáp (Challenge-Response) tốn kém quá nhiều bước bắt tay vô tuyến.
+
+Ngoài ra, cơ chế xác thực dựa trên Timestamp còn giúp hệ thống nâng cao khả năng phát hiện các hành vi bất thường trong mạng truyền thông không dây. Cụ thể, khi Gateway ghi nhận nhiều gói tin có độ lệch thời gian lớn hoặc không hợp lệ trong một khoảng thời gian ngắn, hệ thống có thể kích hoạt các cơ chế cảnh báo hoặc ghi log để phục vụ phân tích an ninh. Điều này đặc biệt quan trọng trong các hệ thống IoT quy mô lớn, nơi các thiết bị hoạt động phân tán và khó kiểm soát trực tiếp.
+
+Bên cạnh đó, việc sử dụng Timestamp kết hợp với thuật toán mã hóa AES-128 còn đảm bảo rằng các gói tin không chỉ được bảo mật về nội dung mà còn đảm bảo tính toàn vẹn và tính mới (freshness). Ngay cả khi tin tặc có khả năng đánh chặn và lưu trữ dữ liệu, việc không thể thay đổi nội dung bên trong gói tin mà không có khóa bí mật khiến cho mọi nỗ lực giả mạo trở nên vô hiệu.
+
+Một ưu điểm khác của phương pháp này là chi phí triển khai thấp và không yêu cầu thay đổi lớn về hạ tầng phần cứng. Các vi điều khiển thông dụng như ESP32 hoặc STM32 hoàn toàn có thể xử lý việc gắn Timestamp và mã hóa AES với độ trễ rất thấp. Đồng thời, IC RTC cung cấp nguồn thời gian ổn định, giúp đảm bảo độ chính xác trong quá trình xác thực.
+
+Tuy nhiên, để hệ thống hoạt động hiệu quả, cần đảm bảo rằng đồng hồ thời gian thực giữa Node và Gateway được đồng bộ ở mức chấp nhận được. Nếu sai lệch thời gian quá lớn, các gói tin hợp lệ cũng có thể bị từ chối. Do đó, trong các triển khai thực tế, cần có cơ chế hiệu chỉnh thời gian định kỳ hoặc sử dụng các giao thức đồng bộ thời gian để duy trì độ chính xác của hệ thống.
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\linewidth]{Thuc_Hanh/Image/Time-Based Anti-Replay Mechanism in LoRa Communication Using AES-128.pdf}
+    \caption{Cơ chế chống Replay Attack dựa trên xác thực dấu thời gian trong LoRa}
+    \label{Hình 2.9}
+\end{figure}
+Hình \ref{Hình 2.9} mô tả chi tiết cơ chế vòng đời của một bản tin an toàn. Ở phần trên của quy trình (Normal Operation), khi Node cảm biến (ESP32) muốn báo cáo dữ liệu môi trường, nó sẽ tiến hành truy vấn IC đồng hồ thời gian thực (RTC DS3231 hoặc bộ định thời cục bộ) để lấy ra một con số Nhãn thời gian hệ thống (T\_{send}, ví dụ đo bằng kỷ nguyên Unix Epoch time). Gói tin mất vài trăm mili-giây bay qua không trung và đến Gateway sau đó Gateway giải mã, thấy nhãn thời gian T\_{send} gửi đi lúc 14:05:10, và thời gian đồng hồ hiện tại của nó là 14:05:11. Độ lệch $\Delta t = 1 \text{ giây}$. Vì $\Delta t$ nằm gọn trong "Cửa sổ an toàn" (Ví dụ: 5 giây), Gateway tin tưởng tuyệt đối đây là gói tin mới (Freshness) và thi hành lệnh.
+
+Ở nửa dưới của sơ đồ, kịch bản tấn công được giả lập. Tên tin tặc dùng phần cứng bắt gọn luồng sóng vô tuyến. Hắn chờ 10 phút sau mới bơm ngược gói tin đó vào mạng nhằm cố ý đảo lộn dữ liệu làm mát. Tuy nhiên, Gateway khi giải mã gói tin rác này vẫn sẽ nhìn thấy cái nhãn thời gian cũ mốc từ 10 phút trước nằm nguyên vẹn bên trong (vì hacker không biết mã AES nên không thể cập nhật nhãn thời gian). Phép trừ toán học $\Delta t$ sẽ lập tức đưa ra con số sai lệch lớn (591 giây). Hệ thống Gateway sẽ đưa ra ngoại lệ (Exception), lập tức bác bỏ gói tin (Drop Packet) và chặn đứng hoàn toàn âm mưu phá hoại. 
+\subsection{Kiến trúc và cơ chế cập nhật phần mềm không dây (OTA) trên nền tảng Edge IoT}
+
+Trong bối cảnh các hệ thống mạng cảm biến không dây (WSN - Wireless Sensor Networks) được triển khai tại những vị trí vật lý khắc nghiệt và khó tiếp cận như môi trường cách ly sinh học của chuồng trại chăn nuôi, việc duy trì vòng đời phần mềm (Software Development Life Cycle) thông qua kết nối cáp vật lý (UART/USB) là hoàn toàn bất khả thi. Để giải quyết rào cản này, công nghệ Over-The-Air (OTA) được áp dụng như một cơ chế cốt lõi. 
+
+Về mặt cấu trúc, bộ nhớ Flash SPI ngoại vi phải được phân chia thành Dual-Bank Architecture. Như được trình bày trong Hình \ref{fig:ota_memory_map}, bộ nhớ được chia thành các vùng độc lập: Vùng nạp khởi động (Bootloader), vùng dữ liệu trạng thái (\texttt{otadata}) và ít nhất hai phân vùng ứng dụng (\texttt{APP0} và \texttt{APP1}). Cơ chế này đảm bảo tính nguyên vẹn của hệ thống: tại bất kỳ thời điểm nào, mã lệnh thực thi luôn chạy trên một phân vùng ổn định, trong khi phân vùng còn lại (đang ở trạng thái nhàn rỗi) sẽ được sử dụng làm bộ đệm để ghi khối dữ liệu phần mềm mới tải về.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\linewidth]{Thuc_Hanh/Image/Flash (Partition Table).pdf}
+    \caption{Giản đồ phân bổ không gian nhớ Flash cho kiến trúc cập nhật Dual-Bank OTA trên ESP32-S3}
+    \label{fig:ota_memory_map}
+\end{figure}
+% \begin{figure}[H]
+% \centering
+% \begin{tikzpicture}[font=\small, >=stealth, node distance=0.5cm]
+%     % Styles
+%     \tikzstyle{block} = [rectangle, draw, thick, minimum width=6cm, minimum height=0.8cm, align=center]
+%     \tikzstyle{active} = [fill=green!20]
+%     \tikzstyle{idle} = [fill=blue!10]
+%     \tikzstyle{system} = [fill=gray!20]
+    
+%     % Memory Map
+%     \node[block, system] (boot) {Bootloader (0x1000 - 0x8000)};
+%     \node[block, system, below=of boot] (part) {Partition Table (0x8000 - 0x9000)};
+%     \node[block, system, below=of part] (otadata) {OTA Data / NVS (0x9000 - 0x10000)};
+%     \node[block, active, below=of otadata, minimum height=1.5cm] (app0) {\textbf{APP0 Partition (Factory / Current)}\\ (Trạng thái: Đang thực thi mã lệnh)};
+%     \node[block, idle, below=of app0, minimum height=1.5cm] (app1) {\textbf{APP1 Partition (OTA Update)}\\ (Trạng thái: Ghi tuần tự firmware mới)};
+    
+%     % Arrows and labels
+%     \draw[->, thick, red] (otadata.west) -- ++(-1.5,0) |- node[pos=0.25, left, align=center] {Cờ Boot trỏ\\vào APP0} (app0.west);
+    
+%     \draw[->, thick, blue, dashed] (app1.east) -- ++(1.5,0) |- node[pos=0.25, right, align=center] {Dữ liệu Firmware mới\\từ mạng Wi-Fi ghi vào} (app1.east);
+% \end{tikzpicture}
+% \caption{Giản đồ phân bổ không gian nhớ Flash (Partition Table) cho kiến trúc cập nhật Dual-Bank OTA trên ESP32-S3}
+% \label{fig:ota_memory_map}
+% \end{figure}
+
+Sự thách thức lớn nhất khi áp dụng OTA trong mạng cảm biến nông nghiệp của đề tài là nghịch lý về băng thông và năng lượng. Giao thức truyền thông chính của hệ thống là LoRa (Long Range), sở hữu ưu điểm vượt trội về khả năng xuyên thấu và cự ly truyền sóng lên tới hàng kilomet với công suất phát chỉ 20 dBm. Tuy nhiên, tốc độ dữ liệu (Data Rate) của mạng LoRa cực thấp, thường dao động ở mức vài trăm bps. Dung lượng của một tệp tin Firmware chuẩn chứa cả ngăn xếp TCP/IP và thuật toán điều khiển biên thường xấp xỉ 1.2 MB. Nếu dùng kênh LoRa để tải tệp tin này, quá trình cập nhật sẽ kéo dài nhiều ngày, chiếm dụng hoàn toàn băng thông mạng (Duty Cycle) và vắt kiệt năng lượng pin. 
+
+Để hóa giải nút thắt vật lý này, đồ án đã tiến hành thiết kế và lập trình kiến trúc cập nhật phần mềm Hybrid OTA. Cơ chế này sử dụng song song hai chuẩn truyền thông: LoRa làm kênh điều khiển (Control Channel) và Wi-Fi làm kênh truyền tải dữ liệu (Data Channel). Trạng thái mặc định, module Wi-Fi bị vô hiệu hóa hoàn toàn ở mức phần cứng (RF Disabled) để đảm bảo dòng tĩnh của hệ thống duy trì ở mức micro-Ampe.
+% \begin{figure}[H]
+% \centering
+% \includegraphics[]{}
+% \caption{Lưu đồ thuật toán điều khiển quá trình Hybrid OTA tích hợp cơ chế bảo vệ Rollback}
+% \label{fig:hybrid_ota_flow}
+% \end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\linewidth]{Thuc_Hanh/Image/OTA (1).pdf}
+    \caption{Lưu đồ thuật toán điều khiển quá trình Hybrid OTA}
+    \label{fig:hybrid_ota_flow}
+\end{figure}
+Như thể hiện trong Hình \ref{fig:hybrid_ota_flow}, ngay sau khi kết nối vào mạng Wi-Fi nội bộ của trang trại, tiến trình tải được thực thi theo phương thức truyền khối (Chunked Transfer Encoding) qua giao thức HTTPS bảo mật. Dữ liệu được ghi trực tiếp vào phân vùng tĩnh thay vì nạp lên RAM nhằm tránh lỗi tràn bộ nhớ (Heap Overflow). Đặc biệt, tính an toàn của hệ thống được đặt lên hàng đầu thông qua cơ chế tự động phục hồi (Auto-Rollback). Nếu bản phần mềm mới tải về chứa lỗi logic (vòng lặp vô hạn, lỗi cấp phát bộ nhớ) khiến hệ điều hành treo cứng, bộ định thời Hardware Watchdog sẽ tự động kích hoạt ngắt Reset. Tại lần khởi động tiếp theo, Bootloader phát hiện cờ \texttt{ESP\_OTA\_IMG\_PENDING\_VERIFY} chưa được gỡ bỏ, nó sẽ tự động đảo ngược con trỏ hệ thống về bản Firmware ổn định cũ. 
+
+\subsection{Khảo sát các công trình nghiên cứu liên quan}
+\subsubsection{Kiến trúc Điện toán biên và Phân bổ tài nguyên}
+Trong bài báo mang tính nền tảng "Edge Computing: Vision and Challenges" \cite{shi2016edge}, W. Shi và các cộng sự đã chính thức hóa định nghĩa về Điện toán biên. Đóng góp lớn nhất của nghiên cứu này là việc đưa ra khái niệm "Computing Stream" (Luồng tính toán), trong đó dữ liệu không còn chảy một chiều từ thiết bị lên đám mây, mà bị đánh chặn và xử lý tại các "nút thắt" ở rìa mạng. 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{Thuc_Hanh/Image/edge Computing diagram.png}
+    \caption{Sơ đồ hoạt động của hệ thống điện toán biên trong bài báo}
+    \label{Hình 2.11}
+\end{figure}
+Nhóm tác giả đã sử dụng các kịch bản thử nghiệm giả lập (Case studies) trong nhà thông minh (Smart Home) để đo lường độ trễ. Kết quả chỉ ra rằng, việc xử lý cục bộ làm giảm băng thông tiêu thụ trên mạng trục lõi (Backbone network) lên tới 80\%, đồng thời cắt giảm độ trễ phản hồi từ vài giây xuống mức mili-giây. Tuy nhiên, giới hạn của công trình này là chỉ dừng ở mức lý thuyết vĩ mô, chưa đề xuất các cấu trúc vi mạch cụ thể để triển khai.
+
+Đi sâu hơn vào bài toán tối ưu hóa, Y. Mao và các cộng sự trong công trình "A Survey on Mobile Edge Computing: The Communication Perspective" \cite{mao2017survey} đã xây dựng một nền tảng toán học đồ sộ cho vấn đề Offloading. Phương pháp nghiên cứu của họ là áp dụng lý thuyết tối ưu hóa lồi (Convex Optimization) và Lý thuyết trò chơi (Game Theory) để giải quyết hàm đa mục tiêu: giảm thiểu năng lượng tiêu thụ tại thiết bị di động trong khi vẫn đáp ứng được ràng buộc về thời gian chết (Deadline) của tác vụ. Họ phân loại kiến trúc ra làm hai nhánh: Partial Offloading (cắt nhỏ thuật toán, chạy một nửa ở Node, gửi một nửa lên Edge Server) và Binary Offloading (chọn hoặc chạy 100\% ở Node, hoặc 100\% ở Server). Quá trình mô phỏng bằng Matlab chỉ ra rằng, đối với các thiết bị IoT có lượng dữ liệu cảm biến nhỏ nhưng yêu cầu độ trễ điều khiển máy móc khắt khe, chiến lược Binary Offloading (Thực thi toàn bộ tại Node) mang lại hiệu năng cao nhất do tránh được chi phí thời gian thiết lập kênh truyền vô tuyến.
+
+Các nghiên cứu chỉ ra rằng kiến trúc Điện toán biên là bắt buộc để khắc phục độ trễ. Chiến lược Offloading nhị phân (chạy hoàn toàn tại MCU của Node) là phương pháp tối ưu. Tuy nhiên, việc áp dụng Deep Learning là quá sức đối với MCU chạy pin, định hướng cho chúng ta phải tìm kiếm các thuật toán biên nhẹ nhàng hơn (như Máy trạng thái hữu hạn - FSM).
+\subsubsection{Đồng thiết kế phần cứng và Tối ưu hóa năng lượng cảm biến}
+Công trình mang tính đột phá nhất liên quan trực tiếp đến cảm biến khí là nghiên cứu của F. Palacio và cộng sự: "Pulsed-Temperature Metal Oxide Gas Sensors for Microwatt Power Consumption" \cite{palacio2020pulsed}. Cảm biến khí oxit kim loại bán dẫn (MOX - như dòng MQ-135 dùng để đo $NH_3$) hoạt động dựa trên nguyên lý thay đổi điện trở bề mặt khi tiếp xúc với khí độc. Tuy nhiên, để phản ứng hóa học xảy ra, lớp màng nhạy khí ($SnO_2$) bắt buộc phải được nung nóng liên tục ở nhiệt độ từ $300^\circ C$ đến $400^\circ C$ bằng một cuộn dây may-so bên trong. Phương pháp thiết kế truyền thống luôn cấp điện liên tục (Continuous Heating) cho cuộn dây này, tiêu tốn một công suất tĩnh khổng lồ khoảng $150 \text{ mW}$ đến $800 \text{ mW}$, hút cạn bất kỳ viên pin nào chỉ trong 2-3 ngày.
+
+Để giải quyết, nhóm của Palacio đã đề xuất phương pháp Điều chế nhiệt độ dạng xung (Pulsed-Temperature). Thay vì nung liên tục, họ sử dụng một công tắc bán dẫn điều khiển bằng xung PWM từ vi điều khiển. Cảm biến sẽ bị ngắt điện hoàn toàn trong thời gian dài (ví dụ 10 phút). Khi cần lấy mẫu, MCU sẽ "đánh thức" cảm biến, bơm một dòng xung cường độ cao trong một khoảng thời gian cực ngắn (chỉ khoảng $50 \text{ ms}$) để làm nóng lớp màng lên $400^\circ C$, đọc giá trị ADC, và ngay lập tức ngắt điện (Power-off). Đánh giá thực nghiệm bằng máy đo nguồn Keithley 2450 cho thấy, phương pháp này giảm công suất tiêu thụ trung bình từ $150 \text{ mW}$ xuống mức siêu vi watt ($16 \mu W$), đồng thời việc tạo sốc nhiệt còn giúp cảm biến loại bỏ khí tồn dư, tăng độ nhạy (Selectivity).
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\linewidth]{Thuc_Hanh/Image/Low-Power Sensing Cycle.pdf}
+    \caption{Chu trình vận hành tiết kiệm năng lượng}
+    \label{Hình 2.10}
+\end{figure}
+Lưu đồ trong Hình \ref{Hình 2.10} mô hình hóa một chu trình sống (Life-cycle) của Node dựa trên triết lý tối ưu năng lượng từ bài báo của F. Palacio. Mấu chốt của quy trình nằm ở khối "Pulsed Heating". Thay vì nối cứng chân VCC của cảm biến khí MQ-135 vào thẳng nguồn pin, hệ thống sử dụng một chân GPIO của ESP32 để kích mở cực cổng (Gate) của một Transistor (MOSFET). Chỉ khi hệ thống thức dậy sau 5 phút ngủ sâu, MOSFET mới đóng mạch cho dòng điện lớn đi qua cuộn nung của cảm biến. Thời gian nung nóng (Pre-heating time) được tinh chỉnh ở mức tối thiểu (khoảng 200ms - vừa đủ để nhiệt độ màng $SnO_2$ đạt đỉnh phản ứng). Ngay sau khi bộ chuyển đổi Tương tự-Số (ADC) chốt được giá trị điện áp, MOSFET lập tức bị ngắt, cô lập cảm biến khỏi nguồn điện. Cơ chế "đánh nhanh rút gọn" này biến một linh kiện vốn ngốn điện khủng khiếp thành một thiết bị tương thích với chuẩn WSN dùng pin.
+
+Bên cạnh đó, nghiên cứu "Low-Power On-Chip Implementation of Enhanced SVM Algorithm..." \cite{chang2022low} của J. Chang chứng minh rằng ta có thể tích hợp thuật toán Học máy cơ bản (Support Vector Machine - SVM) lên các MCU cấp thấp. Họ đã tối ưu hóa hàm Kernel của SVM để nó chỉ tiêu tốn 10KB RAM. Tuy nhiên, việc chạy tính toán dấu phẩy động ma trận vẫn làm CPU mất vài chục mili-giây, tiêu tốn năng lượng hơn việc dùng cấu trúc rẽ nhánh. Cuối cùng, công trình "Hardware Solutions for Low-Power Smart Edge Computing" \cite{wisniewski2022hardware} đã phát triển nền tảng CYSmart, tập trung vào việc áp dụng các IC ổn áp (LDO) có dòng rò tĩnh dưới $1 \mu A$ và sử dụng Sleep mode của phần cứng để đánh bại rào cản năng lượng.
+
+Những khám phá từ nhóm này là kim chỉ nam cho thiết kế mạch nguyên lý. Việc sử dụng MOSFET để cắt nguồn cảm biến (Load Switch) kết hợp cơ chế nung nóng dạng xung (Pulsed Heating) cho MQ-135, kết hợp với các bộ ổn áp tĩnh thấp là những ý tưởng cực kỳ xuất sắc và hoàn toàn khả thi để ứng dụng ngay vào đồ án.
+
+\subsubsection{Mô hình hóa năng lượng truyền thông vô tuyến LoRa}
+Việc đưa dữ liệu biên về trung tâm yêu cầu một giao thức không dây tiêu tốn ít năng lượng nhất có thể.
+
+Trong bài báo "Energy Consumption Model for Sensor Nodes Based on LoRa and LoRaWAN" \cite{bouguera2018energy}, nhóm tác giả T. Bouguera đã xây dựng một mô hình toán học giải phẫu chi tiết toàn bộ hồ sơ năng lượng của một Node LoRa. Họ sử dụng nền tảng vi điều khiển STM32L0 kết hợp với IC vô tuyến SX1272. Bằng cách sử dụng Máy phân tích điện năng (Agilent DC Power Analyzer), họ đã đo đạc chính xác dòng điện tiêu thụ ở 4 trạng thái của chip vô tuyến: Sleep (Ngủ), Standby (Chờ), TX (Phát) và RX (Thu).
+Nghiên cứu đưa ra công thức tổng quát tính điện năng tiêu thụ cho một gói tin:
+\begin{equation}
+    E_{packet} = P_{wakeup} \times T_{wakeup} + P_{TX} \times ToA + P_{RX} \times T_{RX} + P_{sleep} \times T_{sleep}
+\end{equation}
+Phát hiện mang tính bước ngoặt của họ là: việc cấu hình Hệ số trải phổ (Spreading Factor - SF) tác động theo cấp số nhân đến Thời gian bay của sóng (Time on Air - ToA). Ví dụ, truyền một gói tin 50 byte ở SF7 mất $100 \text{ ms}$ với dòng điện $40 \text{ mA}$. Nhưng nếu đổi sang cấu hình SF12 để xuyên tường tốt hơn, gói tin đó sẽ lơ lửng trên không trung mất gần $2 \text{ giây}$, rút cạn một lượng năng lượng lớn gấp 20 lần từ viên pin. Từ đó, họ đề xuất rằng các mạng cảm biến tĩnh không nên mù quáng cài đặt SF tối đa, mà phải có cơ chế cấu hình thích ứng (Adaptive Data Rate) dựa trên khoảng cách. Nếu khoảng cách dưới 500m (Line-of-sight), bắt buộc phải khóa cứng cấu hình ở SF7 hoặc SF8 để bảo toàn pin.
+
+
+\subsection{Kết luận chương}
+
+Chương 2 đã thiết lập nền tảng lý thuyết theo một logic nhân quả nhất
+quán, trong đó mỗi lớp công nghệ được lựa chọn xuất phát từ ràng buộc
+của lớp trước.
+
+Đặc tính sinh lý của gia cầm -- không có tuyến mồ hôi, tản nhiệt hoàn
+toàn qua hô hấp -- biến chỉ số THI thành thông số sống còn và áp đặt
+yêu cầu phản ứng tức thời lên toàn bộ hệ thống. Yêu cầu đó loại bỏ mô
+hình Cloud tập trung khỏi phương án khả thi, dẫn đến kiến trúc Điện
+toán biên với chiến lược Offloading nhị phân -- toàn bộ logic phán quyết
+thực thi ngay tại Node. Để đảm bảo tính tất định cho vòng điều khiển, FreeRTOS với cơ chế ghim lõi (Core Pinning) trên ESP32 là
+giải pháp kiến trúc phần mềm bắt buộc.
+
+Song song với bài toán tính toán là bài toán năng lượng. Mô hình toán
+học tiêu thụ pin theo Hệ số trải phổ SF chỉ ra rằng tăng SF từ 7 lên 12
+kéo dài thời gian phát sóng gần 20 lần, buộc hệ thống phải khóa cứng ở
+SF7/SF8 thay vì tối đa hóa chống nhiễu một cách mù quáng. Kết hợp với
+kỹ thuật nung nóng xung cho cảm biến khí gas và chế độ ngủ sâu lai, đây
+là nền tảng để kéo dài tuổi thọ pin ở mức chấp nhận được cho triển khai
+thực địa.
+
+Lớp bảo mật AES-128 kết hợp xác thực Timestamp khép kín thiết kế bằng
+cách bịt kín lỗ hổng Replay Attack của mạng vô tuyến mở, trong
+khi cơ chế OTA lai đảm bảo khả năng bảo trì từ xa mà không cần can
+thiệp vật lý. Toàn bộ cơ sở lý luận này dẫn dắt trực tiếp các quyết
+định thiết kế phần cứng và phần mềm được trình bày từ Chương 3 trở đi.

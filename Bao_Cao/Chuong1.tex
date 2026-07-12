@@ -1,0 +1,179 @@
+
+\renewcommand{\figurename}{\fontsize{12pt}{0pt}\selectfont \bfseries Hình}
+\renewcommand{\tablename}{\fontsize{12pt}{0pt}\selectfont \bfseries Bảng}
+\section*{CHƯƠNG 1. TỔNG QUAN VỀ ĐỀ TÀI VÀ CƠ SỞ KHOA HỌC}
+\addcontentsline{toc}{section}{\numberline{}CHƯƠNG 1. TỔNG QUAN VỀ ĐỀ TÀI VÀ CƠ SỞ KHOA HỌC}
+\setcounter{section}{1}
+\setcounter{figure}{0}
+\setcounter{table}{0}
+Chương 1 tập trung phân tích tính cấp thiết của việc giám sát vi khí hậu chuồng nuôi và giải quyết rủi ro từ "Nghịch lý đám mây" thông qua kiến trúc Điện toán biên thực thi trực tiếp trên Node. Đề tài xác lập mục tiêu thiết kế thiết bị Node ứng dụng vi điều khiển ESP32-S3 và công nghệ LoRa nhằm đạt được sự tối ưu về độ trễ xử lý, năng lượng tiêu thụ và bảo mật dữ liệu.
+\subsection{Lý do chọn đề tài}
+\subsubsection{Thực trạng ngành chăn nuôi và các thách thức từ môi trường vi khí hậu}
+Trong xu hướng hiện đại hóa nông nghiệp thông minh (Smart Agriculture), việc chuyển dịch từ quy mô hộ gia đình nhỏ lẻ sang các mô hình trang trại tập trung khép kín đang diễn ra mạnh mẽ tại Việt Nam. Tuy nhiên, mật độ nuôi thả cao trong không gian kín đặt ra thách thức lớn đối với khâu kiểm soát các yếu tố vi khí hậu chuồng nuôi, yếu tố mang tính quyết định trực tiếp đến tỷ lệ sinh trưởng và hiệu quả kinh tế.
+\begin{figure}[H]
+        \centering
+        \includegraphics[width=0.9\linewidth]{Thuc_Hanh/Image/ChanNuoiTapTrungGa.jpg}
+        \caption{Mô hình chăn nuôi tập trung}
+        \label{fig:placeholder}
+    \end{figure}
+Về mặt đặc tính sinh học, gia cầm là loài không có tuyến mồ hôi, năng lực điều hòa thân nhiệt kém và cơ chế tản nhiệt phụ thuộc hoàn toàn vào hệ thống hô hấp. Ở các giai đoạn tăng trưởng đầu đời như gà con, mức nhiệt độ lý tưởng trong lồng ấp yêu cầu duy trì ngặt nghèo trong khoảng từ 32°C đến 35°C. Nếu nhiệt độ môi trường vượt ngưỡng 35°C, vật nuôi sẽ rơi vào trạng thái stress nhiệt nguy hiểm. Khi mức nhiệt chạm ngưỡng giới hạn 38°C, hiện tượng suy tim diện rộng sẽ xảy ra, dẫn đến tỷ lệ tử vong hàng loạt trong thời gian ngắn.
+
+Bên cạnh nhiệt độ, độ ẩm và nồng độ khí độc tích tụ cũng là những tác nhân gây thiệt hại nặng nề. 
+\begin{figure}[H]
+        \centering
+        \includegraphics[width=1.0\linewidth]{Thuc_Hanh/Image/Chuong1_impactfactor.png}
+        \caption{Một số thông số môi trường}
+        \label{fig:placeholder}
+    \end{figure}
+Trong môi trường chuồng trại khép kín có độ ẩm cao vượt mức 75\%, các khối chất thải hữu cơ chưa qua xử lý phân hủy rất nhanh, giải phóng một lượng lớn khí Amoniac ($NH_3$) vào không khí. Khi nồng độ khí $NH_3$ vượt ngưỡng an toàn 25 ppm, niêm mạc đường hô hấp của vật nuôi sẽ bị tổn thương và bào mòn nghiêm trọng. Hiện tượng này làm suy giảm hệ miễn dịch tự nhiên, tạo điều kiện cho các chủng dịch bệnh nguy hiểm bùng phát, gây tổn thất nghiêm trọng cho người chăn nuôi. Do đó, việc giám sát liên tục, chính xác các tham số môi trường là yêu cầu bắt buộc trong quy trình vận hành trang trại công nghiệp.
+
+\subsubsection{Hạn chế của các giải pháp hiện tại và "Nghịch lý đám mây"}
+Đối với bài toán giám sát chuồng trại, các phương pháp thủ công truyền thống ngày càng bộc lộ sự lạc hậu: tiêu tốn nhiều nhân lực, khó bảo đảm tính liên tục và dễ mắc sai số. Trên thị trường hiện nay, dù đã xuất hiện một số hệ sinh thái nông nghiệp thông minh toàn diện như giải pháp ONE Farm \cite{7174976} của VNPT, nhưng các hệ thống thương mại này chủ yếu hướng đến phân khúc doanh nghiệp lớn do chi phí đầu tư ban đầu và vận hành tương đối cao.
+
+Xét về mặt kiến trúc hệ thống, các giải pháp thương mại hiện tại bộc lộ những điểm yếu khi đối mặt với điều kiện thực tế tại các vùng nông thôn Việt Nam:
+\begin{itemize}
+    \item Chi phí duy trì hạ tầng viễn thông: Việc phụ thuộc hoàn toàn vào kết nối mạng di động 3G/4G hoặc hệ thống Wi-Fi diện rộng khiến các hộ chăn nuôi quy mô vừa và nhỏ phải gánh chịu chi phí vận hành cố định hàng tháng tương đối lớn.
+    \item Độ ổn định của mạng lưới vô tuyến: Hạ tầng mạng viễn thông tại các vùng nông nghiệp xa trung tâm thường có độ phủ sóng không ổn định, dễ bị gián đoạn do thời tiết hoặc địa hình.
+    \item Rủi ro từ "Nghịch lý đám mây" (Cloud Paradox): Việc cấu hình cho các node cảm biến liên tục truyền tải toàn bộ khối lượng dữ liệu thô lên máy chủ đám mây trung tâm để xử lý tính toán gây ra sự lãng phí nghiêm trọng về băng thông vô tuyến, tiêu tốn năng lượng của thiết bị biên và tiềm ẩn các rủi ro lớn về an toàn thông tin. Nguy hiểm hơn, khi xảy ra sự cố đứt cáp hoặc mất kết nối Internet hoàn toàn, toàn bộ luồng dữ liệu bị chặn đứng, khiến hệ thống mất khả năng phân tích và ra quyết định xử lý. Lúc này, các thiết bị chấp hành như quạt làm mát hay hệ thống phun sương không thể tự động kích hoạt, dẫn đến nguy cơ vật nuôi chết ngạt hàng loạt do stress nhiệt tăng vọt.
+\end{itemize}
+Từ thực tiễn đó, đề tài hướng tới việc nghiên cứu và chế tạo một hệ thống thiết bị nội bộ tự chủ, kết hợp công nghệ truyền thông không dây tầm xa LoRa để loại bỏ chi phí cước viễn thông , đồng thời ứng dụng năng lực Điện toán biên (Edge Computing) xử lý dữ liệu trực tiếp tại lớp Gateway phân cấp. Mô hình này bảo đảm khả năng vận hành độc lập: ngay cả khi toàn bộ kết nối Internet bên ngoài bị gián đoạn, hệ thống vẫn duy trì năng lực tính toán và trực tiếp kích hoạt các kịch bản cứu hộ vật nuôi kịp thời ngay tại chuồng trại.
+
+% --- Bổ sung phần RTOS ---
+\subsubsection{Thách thức về giới hạn tài nguyên của Nút biên và bài toán tối ưu hóa RTOS}
+Việc dồn toàn bộ năng lực tính toán xuống thiết bị Node (mô hình \textit{Local Binary Offloading}) tuy giải quyết được "Nghịch lý đám mây" nhưng lại đẩy chính Node vào một bài toán kỹ thuật hóc búa: phải gánh đồng thời nhiều luồng công việc dị thể trên một nền tảng tài nguyên cực kỳ eo hẹp. Vi điều khiển ESP32-S3 chỉ sở hữu khoảng $512\,\text{KB}$ SRAM nội và hai lõi xử lý chạy bằng pin, trong khi phải xử lý song song hàng loạt tác vụ có đặc tính thời gian trái ngược nhau: lấy mẫu cảm biến liên tục qua bus I2C/ADC/UART, lọc nhiễu (EMA, trung vị, Kalman), chạy máy trạng thái hữu hạn (FSM) ra quyết định an toàn với ràng buộc tất định dưới $50\,\text{ms}$, mã hóa có xác thực (AEAD), thu phát LoRa với các pha chờ SPI mang tính "chặn" (blocking), ghi log ngoại tuyến và giám sát watchdog. Các tác vụ này cạnh tranh gay gắt ba loại tài nguyên hữu hạn: thời gian CPU, bus ngoại vi dùng chung (đặc biệt là bus I2C) và bộ nhớ RAM.
+
+Mô hình lập trình vòng lặp tuần tự (super-loop) truyền thống không thể bảo đảm tính thời gian thực khi một tác vụ chậm hoặc bị treo (ví dụ nghẽn bus I2C) chiếm dụng CPU \cite{white2011making}. Do đó, thách thức chính về mặt phần mềm của đề tài là \textbf{điều phối đa nhiệm một cách tất định trong giới hạn ngặt nghèo về bộ nhớ và năng lượng}, và biện pháp là xây dựng kiến trúc firmware xoay quanh một Hệ điều hành thời gian thực (RTOS). Từ đó, bên cạnh các mục tiêu về chức năng, đề tài đặt thêm một nhóm mục tiêu tối ưu hóa RTOS có thể kiểm chứng định lượng:
+\begin{itemize}
+    \item \textbf{An toàn bộ nhớ ngăn xếp (Stack):} cấp phát Stack cho từng tác vụ sao cho mức dùng đỉnh (High-Water Mark) luôn còn dư an toàn, tuyệt đối không xảy ra tràn ngăn xếp (stack overflow) gây sập hệ thống.
+    \item \textbf{Ổn định vùng nhớ động (Heap):} dung lượng Heap nội còn trống phải ổn định theo thời gian (không rò rỉ -- memory leak, không phân mảnh nghiêm trọng), duy trì trên một ngưỡng dự phòng an toàn.
+    \item \textbf{Dư địa tải CPU:} phân bổ tác vụ và mức ưu tiên giữa hai lõi sao cho tải CPU mỗi lõi không bão hòa, bảo đảm luôn còn dư địa đáp ứng tức thời sự kiện khẩn cấp.
+    \item \textbf{Tiết kiệm năng lượng ở mức RTOS:} khai thác cơ chế \textit{Tickless Idle} của FreeRTOS kết hợp Deep/Light Sleep để hạ tối đa năng lượng tiêu thụ trong thời gian rảnh, kéo dài tuổi thọ pin.
+    \item \textbf{Chặn nghịch đảo ưu tiên:} bảo vệ tài nguyên dùng chung (bus I2C) bằng Mutex có kế thừa ưu tiên (priority inheritance) để giới hạn thời gian chặn của tác vụ ưu tiên cao.
+\end{itemize}
+Các chỉ tiêu RTOS nêu trên sẽ được thiết kế ở Chương 3, hiện thực ở Chương 4 và kiểm chứng bằng số liệu đo thực tế ở Chương 5.
+% --- Hết bổ sung phần RTOS ---
+
+\subsection{Mục tiêu nghiên cứu và các chỉ tiêu kỹ thuật lượng hóa}
+Mục đích cốt lõi của đề tài là nghiên cứu, thiết kế và chế tạo thực nghiệm một hệ thống IoT giám sát vi khí hậu đạt chuẩn công nghiệp, vận hành ổn định trong môi trường chuồng trại khắc nghiệt, có khả năng tính toán tự chủ và bảo mật cao. Để hệ thống thực sự mang lại giá trị ứng dụng thực tiễn, việc thiết kế không chỉ dừng lại ở mức độ mô hình thử nghiệm (prototype) mà phải đáp ứng các ràng buộc khắt khe về mặt kỹ thuật cũng như đặc tính sinh học.
+
+% Thứ nhất, đối với đặc tính sinh lý nhạy cảm của gia cầm, tốc độ phản hồi của hệ thống khi nhiệt độ hoặc nồng độ khí độc tăng vọt là yếu tố sống còn. Do đó, yêu cầu về độ trễ xử lý sự cố được đặt lên hàng đầu, đòi hỏi hệ thống phải đưa ra quyết định điều khiển thiết bị làm mát gần như tức thời ngay tại lớp mạng cục bộ mà không cần phụ thuộc hay chờ đợi dữ liệu khứ hồi từ máy chủ đám mây.
+
+% Thứ hai, trong điều kiện các mô hình chăn nuôi quy mô lớn, khu vực chuồng trại thường phân bố rải rác trên diện tích rộng và gặp nhiều hạn chế về việc kéo hạ tầng điện lưới đến từng điểm đo. Điều này đặt ra bài toán bắt buộc phải sử dụng nguồn năng lượng độc lập (pin sạc) kết hợp với công nghệ truyền thông vô tuyến tầm xa, có khả năng xuyên tín hiệu tốt qua các rào cản vật lý như tường gạch hay vách tôn. Việc tính toán thiết kế phần cứng để tối ưu hóa dòng điện rò ở chế độ ngủ sâu (Deep Sleep) là điều kiện tiên quyết giúp thiết bị bám trụ lâu dài ngoài thực địa, giảm thiểu tối đa chi phí bảo trì định kỳ cho người nông dân.
+
+% Cuối cùng, trong một mạng lưới truyền thông không dây mở như LoRa, các rủi ro về việc dữ liệu bị can thiệp hoặc kẻ gian sử dụng phương thức phát lại gói tin (Replay Attack) để kích hoạt sai rơ-le có thể gây ra những thiệt hại nghiêm trọng cho toàn bộ lứa nuôi. Vì vậy, việc áp dụng các cơ chế mật mã học để bảo vệ tính toàn vẹn và xác thực của đường truyền là một mục tiêu không thể thiếu trong khâu thiết kế phần mềm.
+
+Để phục vụ công tác kiểm thử, đo lường thực nghiệm và làm cơ sở đối chiếu vững chắc khi nghiệm thu đánh giá đồ án, toàn bộ các mục tiêu thiết kế nêu trên đã được quy đổi và lượng hóa chi tiết qua hệ thống các thông số kỹ thuật trình bày tại bảng \ref{Bảng 1.1}:
+\begin{table}[H]
+\centering
+\caption{Bảng chỉ tiêu kỹ thuật lượng hóa của hệ thống}
+\label{Bảng 1.1}
+\vspace{2mm}
+\small
+
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash\bfseries}p{3.2cm} >{\raggedright\arraybackslash\itshape}p{3.5cm} X}
+\toprule
+\textbf{Phân hệ chức năng} & \textbf{Tham số thiết kế} & \textbf{Chỉ tiêu kỹ thuật } \\
+\midrule
+
+\multirow{3}{=}{Cơ khí \& Phần cứng} 
+    & Quy cách mạch in & Custom PCB FR4 2 lớp, phủ sơn chống oxy hóa. \\ \cmidrule{2-3}
+    & Nguồn cấp & Pin Li-ion 18650 (3200\textit{mAh}), sạc qua cổng USB Type-C. \\ \cmidrule{2-3}
+    & Vỏ hộp bảo vệ & Vỏ PETG in 3D ($110 \times 85 \times 75$ \textit{mm}), chuẩn kháng nước/bụi IP65, tích hợp màng lọc PTFE. \\
+\midrule
+
+\multirow{3}{=}{Hiệu năng LoRa RF} 
+    & Tham số vô tuyến & Băng tần 433 \textit{MHz}; SF = 7; BW = 125 \textit{kHz}; CR = 4/5. \\ \cmidrule{2-3}
+    & Cự ly truyền dẫn & 500\textit{m} - 1000\textit{m} trong điều kiện không vật cản (LOS). \\ \cmidrule{2-3}
+    & Tỷ lệ suy hao & PLR $<$ 5\% tại khoảng cách 200\textit{m} có vật cản (NLOS). \\
+\midrule
+
+\multirow{3}{=}{Điện toán biên \& Bảo mật} 
+    & Độ trễ xử lý biên & $<$ 50 \textit{ms} (từ lúc phát hiện sự cố đến khi đóng Rơ-le). \\ \cmidrule{2-3}
+    & Cơ chế mật mã & Mã hóa AES-128 và ASCON, kết hợp xác thực MAC và kiểm tra CRC. \\ \cmidrule{2-3}
+    & Chống Replay Attack & Khớp nhãn thời gian (Timestamp) từ RTC với cửa sổ $\Delta t < 5s$. \\
+\midrule
+
+\multirow{2}{=}{Năng lượng \& Điện năng} 
+    & Dòng Deep Sleep & $<$ 20 $\mu$\textit{A}. \\ \cmidrule{2-3}
+    & Tuổi thọ pin & $>$ 3 tháng (với chu kỳ lấy mẫu 5 phút/lần). \\
+\midrule
+
+% Nền tảng Cloud & Đồng bộ dữ liệu & Giao tiếp Firebase Realtime Database, độ trễ hiển thị $<$ 5\textit{s}, hỗ trợ điều khiển Downlink. \\
+% \midrule
+
+% Sản phẩm học thuật & Tài liệu bàn giao & Báo cáo đồ án và 01 bài báo khoa học (tiếng Anh, định dạng chuẩn IEEE). \\
+% \bottomrule
+
+\end{tabularx}
+\end{table}
+\subsection{Đối tượng và phạm vi nghiên cứu}
+\subsubsection{Đối tượng nghiên cứu:}
+\begin{itemize}
+    \item Vi điều khiển đa nhân ESP32-S3 và năng lực xử lý Edge Computing.
+    \item Giao thức truyền thông LoRa vật lý (IC SX1278).
+    \item Hệ điều hành FreeRTOS điều phối đa nhiệm trên Node.
+    \item Thuật toán Điện toán biên thực thi trên Node (Tiền xử lý, lọc nhiễu, máy trạng thái ra quyết định).
+    \item Mật mã học bảo mật: AES-128, ASCON, MAC và chống Replay Attack.
+\end{itemize}
+\subsubsection{Phạm vi nghiên cứu:}
+\begin{itemize}
+    \item Phần cứng: Tập trung thiết kế, chế tạo PCB và vỏ hộp IP65 cho duy nhất thiết bị Node cảm biến. Khối Gateway sử dụng thiết bị có sẵn để làm trạm trung chuyển dữ liệu lên Cloud.
+    \item Phần mềm: Phát triển Firmware cho Node đảm nhiệm 100\% logic tính toán biên. Xây dựng cơ chế Hybrid Deep Sleep (Ngủ định kỳ kết hợp thức dậy bằng sự kiện ngắt ngoài khi có sự cố khẩn cấp).
+\end{itemize}
+% \subsection{Yêu cầu của đề tài}
+% Để đáp ứng mục tiêu nghiên cứu và giải quyết triệt để bài toán thực tiễn tại các trang trại, thiết bị Node phải thỏa mãn các yêu cầu khắt khe được lượng hóa bằng các tham số cụ thể sau:
+% \subsubsection{Yêu cầu chức năng}
+% \begin{itemize}
+%     \item Thu thập và giám sát vi khí hậu: Node phải quét và lấy mẫu liên tục dữ liệu từ tổ hợp cảm biến với sai số đo lường dưới 5\%. Cụ thể, hệ thống phải theo dõi sát sao biểu đồ nhiệt - ẩm và nhận diện ngay lập tức khi môi trường chạm các ngưỡng nguy hiểm: nhiệt độ vượt 35°C (gây stress nhiệt) , độ ẩm trên 75\% , và nồng độ khí độc Amoniac (NH3) vượt ngưỡng 25 ppm.
+%     \item Điện toán biên (Edge Computing): Tích hợp Máy trạng thái hữu hạn (FSM) tại vi điều khiển để tự động đối chiếu dữ liệu thô với ma trận ngưỡng an toàn. Khi phát hiện các tham số vượt ngưỡng (ví dụ: nhiệt độ > 35°C), thuật toán biên phải tự động kích hoạt ngõ ra GPIO để đóng Rơ-le điều khiển hệ thống làm mát cục bộ mà không cần chờ lệnh từ Gateway hay Cloud.
+%     \item Truyền thông vô tuyến LoRa: Đóng gói dữ liệu Payload (định mức 32-bytes)  và phát sóng định kỳ. Cấu hình phần cứng phải chốt ở tần số 433 MHz, Spreading Factor (SF) = 7, Bandwidth (BW) = 125 kHz và Coding Rate = 4/5 để cân bằng giữa băng thông và tầm xa.
+%     \item Lưu trữ ngoại tuyến (Offline Storage): Xây dựng cơ chế phát hiện rớt mạng cục bộ. Khi không nhận được gói tin phản hồi (ACK) từ Gateway, Node phải tự động đẩy dữ liệu log vào vùng nhớ tĩnh (Flash/PSRAM) và đồng bộ lại ngay khi sóng vô tuyến được khôi phục.
+%     \item Bảo mật và tính toàn vẹn dữ liệu: Mã hóa toàn bộ khối dữ liệu tải trọng bằng thuật toán đối xứng AES-128. Đồng thời, tích hợp IC thời gian thực (RTC DS3231) để đính kèm nhãn thời gian (Timestamp) vào từng gói tin , thiết lập cửa sổ thời gian chặn Replay Attack với độ lệch $\Delta{t}$ < 5s.
+% \end{itemize}
+% \subsubsection{Yêu cầu phi chức năng}
+% \begin{itemize}
+%     \item Độ trễ xử lý Điện toán biên (Edge Latency): Thời gian đáp ứng của luồng điều khiển (tính từ thời điểm cảm biến xuất tín hiệu báo vượt ngưỡng đến khi chân GPIO đóng mạch Rơ-le) bắt buộc phải nhỏ hơn 50 mili-giây.
+%     \item Hiệu suất năng lượng và Tuổi thọ pin (Power Profiling): Vận hành trên nguồn pin Li-ion 18650 (dung lượng 3200mAh). Hệ thống phải quản lý dòng tiêu thụ thông qua chế độ Deep Sleep, duy trì dòng rò ở trạng thái chờ dưới 20µA. Với chu kỳ lấy mẫu 5 phút/lần, Node phải có khả năng hoạt động liên tục hơn 3 tháng mà không cần sạc lại.
+%     \item Chất lượng đường truyền (Link Quality): Phủ sóng vô tuyến ổn định trong bán kính 500m đến 1000m ở điều kiện không vật cản (Line-of-Sight). Trong môi trường chuồng trại có tường bê tông che khuất (Non-Line-of-Sight), Tỷ lệ mất gói tin (Packet Loss Rate - PLR) phải được duy trì dưới 5% ở mốc khoảng cách 200m.
+%     \item An toàn chức năng (Functional Safety): Hệ thống phải hoạt động ổn định 24/7. Yêu cầu bắt buộc phải cấu hình Hardware Watchdog Timer để tự động reset vi điều khiển nếu xảy ra hiện tượng treo bus I2C hoặc rò rỉ vùng nhớ heap (Memory Leak).
+% \end{itemize}
+% \subsubsection{Yêu cầu kỹ thuật và thiết kế phần cứng}
+% \begin{itemize}
+%     \item Mạch nguyên lý và khối xử lý cốt lõi: Sử dụng vi điều khiển có năng lực xử lý đa nhân làm khối trung tâm, kết hợp với module truyền thông vô tuyến tầm xa dải tần thấp (Sub-GHz) thông qua giao thức truyền thông nối tiếp tiêu chuẩn. Khối quản lý năng lượng yêu cầu tích hợp mạch sạc và linh kiện ổn áp tuyến tính (LDO) có dòng tĩnh (Quiescent current) cực thấp. Đặc biệt, nhằm tối đa hóa hiệu năng tiết kiệm điện, phần cứng bắt buộc phải tích hợp cấu trúc công tắc tải (Load Switch) sử dụng linh kiện bán dẫn công suất, cho phép vi điều khiển chủ động ngắt hoàn toàn nguồn điện cấp cho toàn bộ tổ hợp cảm biến ngoại vi khi hệ thống tiến vào trạng thái ngủ sâu (Deep Sleep).
+%     \item Thiết kế mạch in (Custom PCB): Thiết kế bo mạch in tiêu chuẩn công nghiệp 2 lớp. Quá trình quy hoạch đường mạch (Layout) phải tuân thủ nghiêm ngặt các quy tắc chống nhiễu điện từ (EMI). Cụ thể, cần thiết lập các vùng cách ly (Keep-out zone) không phủ đồng tại khu vực ăng-ten vô tuyến để tránh suy hao phát xạ, đồng thời phân tách vật lý rõ ràng giữa vùng tín hiệu số (Digital) tốc độ cao và đường tín hiệu tương tự (Analog) nhạy cảm để triệt tiêu nhiễu chéo. Bo mạch sau khi hoàn thiện gia công và hàn linh kiện dán (SMD) phải được phủ lớp bảo vệ chuyên dụng để chống ô xi hóa trong môi trường độ ẩm cao và nhiều khí ăn mòn.
+% \end{itemize}
+\subsection{Phương pháp nghiên cứu}
+Để hiện thực hóa các yêu cầu khắt khe tại thiết bị Node từ khâu thiết kế đến đánh giá nghiệm thu, đề tài áp dụng tổ hợp các phương pháp nghiên cứu chuyên sâu bao gồm:
+\subsubsection{Phương pháp nghiên cứu lý thuyết và cơ sở toán học}
+\begin{itemize}
+    \item Phân tích đặc tính sinh học: Nghiên cứu các tài liệu chăn nuôi gia cầm để trích xuất biểu đồ nhiệt - ẩm theo ngày tuổi. Từ đó, lập bảng ma trận trạng thái (State Matrix) làm cơ sở logic nền tảng cho thuật toán Điện toán biên (Edge Computing).
+    \item Phân tích kỹ thuật vô tuyến: Dựa trên cơ sở toán học của kỹ thuật điều chế Chirp Spread Spectrum (CSS). Sử dụng công thức tính Quỹ đường truyền (Link Budget) để tính toán lý thuyết sự đánh đổi giữa Spreading Factor (SF), Băng thông (BW) và Khoảng cách truyền sóng.
+    \item Nghiên cứu mật mã học: Đọc hiểu tài liệu kỹ thuật của thư viện mbedtls trên nền tảng ESP-IDF. Nắm vững cấu trúc dịch vòng (ShiftRows) và hoán vị (SubBytes) của thuật toán mã hóa đối xứng AES-128 để đảm bảo tối ưu hóa, không gây tràn bộ nhớ RAM khi chạy đa luồng trên vi điều khiển.
+\end{itemize}
+\subsubsection{Phương pháp đồng thiết kế và mô hình hóa trên máy tính (HW/SW Co-design)}
+Đồ án áp dụng chu trình thiết kế song song để đảm bảo tính tương thích tuyệt đối giữa phần cứng IP65 và Firmware xử lý biên. 
+\begin{itemize}
+    \item Thiết kế Cơ khí (CAD): Sử dụng phần mềm thiết kế 3D để dựng mô hình 3D vỏ hộp. Tính toán buồng khí động học: xác định vị trí đặt các khe hở thông gió và màng lọc PTFE sao cho không khí lưu thông tối ưu bề mặt cảm biến SHT31 và MQ-135, đồng thời đạt chuẩn kháng nước IP65.
+    \item Thiết kế Phần cứng (Hardware Layout): Sử dụng Kicad để mô hình hóa sơ đồ nguyên lý (Schematic) và quy hoạch Custom PCB 2 lớp. Ứng dụng phương pháp tính toán dải đồng để phối hợp trở kháng $50 \Omega$ (Impedance Matching) cho đường dẫn ăng-ten vô tuyến, đồng thời thiết lập các vùng cách ly nhiễu (Keep-out zone).
+    \item Thiết kế Phần mềm: Sử dụng phương pháp vẽ lưu đồ Máy trạng thái hữu hạn (FSM - Finite State Machine) để quy hoạch kiến trúc phân luồng chạy song song trên FreeRTOS, đảm bảo tính đồng bộ giữa tác vụ thu thập, mã hóa và ra quyết định biên.
+\end{itemize}
+\subsubsection{Phương pháp chế tạo, thực nghiệm và đo lường định lượng}
+\begin{itemize}
+    \item Gia công và Lắp ráp (Assembly): Đặt gia công bản mạch in, tự thực hiện quy trình đóng chip bằng máy khò nhiệt (SMD Soldering). Lắp ráp vật lý bo mạch vào vỏ nhựa PETG in 3D kết hợp bơm keo chống ẩm và ép gioăng cao su silicone.
+    \item Đo lường định lượng (Quantitative Measurement): Sử dụng các thiết bị đo lường chuẩn công nghiệp để lấy số liệu thực tế tại Node
+    \item Phân tích thống kê và Trực quan hóa dữ liệu: Thiết lập các bài test thực địa khắc nghiệt để thu thập hàng ngàn dòng Log Data (bao gồm: RSSI, SNR, Thời gian gửi/nhận). Sử dụng các thuật toán để tiền xử lý dữ liệu, làm sạch dữ liệu nhiễu, tính toán tỷ lệ mất gói (Packet Loss Rate - PLR), chi phí thời gian mã hóa (Encryption Overhead Time).
+\end{itemize}
+\subsection{Kết luận chương}
+Chương 1 đã làm rõ tính cấp thiết của đề tài xuất phát từ hai áp lực
+song song: đặc tính sinh lý mỏng manh của gia cầm đòi hỏi kiểm soát vi
+khí hậu liên tục và tức thời, trong khi các giải pháp thương mại hiện
+tại lại bộc lộ điểm yếu chết người khi mất kết nối Internet -- toàn bộ
+luồng điều khiển tê liệt, vật nuôi không được bảo vệ.
+
+Từ đó, đề tài xác lập hướng tiếp cận rõ ràng: đưa năng lực tính toán
+xuống trực tiếp thiết bị Node thông qua kiến trúc Điện toán biên với
+chiến lược Offloading nhị phân, kết hợp công nghệ LoRa để loại bỏ sự
+phụ thuộc vào hạ tầng viễn thông thương mại. Các chỉ tiêu kỹ thuật được
+lượng hóa cụ thể, không chỉ là mục tiêu thiết kế
+mà còn là thước đo nghiệm thu định lượng xuyên suốt các chương tiếp
+theo.

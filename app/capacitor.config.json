@@ -1,0 +1,12 @@
+{
+  "appId": "com.lorafarm.app",
+  "appName": "LoRa Farm",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "http",
+    "cleartext": true
+  },
+  "android": {
+    "allowMixedContent": true
+  }
+}

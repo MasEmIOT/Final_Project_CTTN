@@ -1,0 +1,96 @@
+menu "Node Sensor Configuration"
+
+    config NODE_ID
+        int "Node ID (1-255)"
+        range 1 255
+        default 1
+        help
+            Ma so dinh danh cua node (fallback). Neu bat NODE_ID_FROM_MAC thi
+            Node ID duoc dan xuat tu MAC efuse, bo qua gia tri nay.
+
+    config NODE_ID_FROM_MAC
+        bool "Dinh danh Node theo MAC (moi mach tu co ID rieng)"
+        default y
+        help
+            Bat: Node ID = ham bam cua MAC efuse (1..254). Moi board tu co ID
+            rieng, khong can dat tay. Tat: dung CONFIG_NODE_ID co dinh.
+
+    config NODE_OTA_WIFI_SSID
+        string "OTA WiFi SSID (chi dung khi nap OTA)"
+        default "huu nam"
+        help
+            SSID WiFi de node ket noi khi TAI OTA. Luc chay binh thuong node
+            KHONG bat WiFi.
+
+    config NODE_OTA_WIFI_PASS
+        string "OTA WiFi password"
+        default "matkhau987"
+
+    config NODE_SEND_INTERVAL_S
+        int "Send interval (seconds)"
+        range 3 3600
+        default 4
+        help
+            Chu ky do va gui du lieu. Yeu cau nhanh: dat 3 hoac 4 giay.
+
+    config NODE_ACK_TIMEOUT_MS
+        int "ACK wait timeout (ms)"
+        range 100 3000
+        default 800
+        help
+            Thoi gian doi ACK tu gateway sau moi lan gui. Phai du nho de
+            tong chu ky van nam trong 3-4 giay.
+
+    config NODE_ACK_RETRIES
+        int "ACK retries (so lan gui lai khi khong co ACK)"
+        range 0 5
+        default 2
+
+    choice NODE_SLEEP_MODE
+        prompt "Che do ngu giua cac chu ky"
+        default NODE_SLEEP_LIGHT
+        help
+            - None: luon chay (CPU cao nhat, ton dien).
+            - Light sleep: giu RTOS + RAM, thuc bang timer HOAC su kien GPIO (DIO0).
+              Giu duoc buffer offline. (KHUYEN NGHI)
+            - Deep sleep: tiet kiem dien nhat, nhung CHIP RESET moi chu ky
+              (RAM mat -> buffer offline KHONG duoc giu). Thuc bang timer HOAC ext1 (DIO0).
+
+        config NODE_SLEEP_NONE
+            bool "None (luon chay)"
+        config NODE_SLEEP_LIGHT
+            bool "Light sleep (giu RTOS + RAM)"
+        config NODE_SLEEP_DEEP
+            bool "Deep sleep (tiet kiem dien nhat, reset moi chu ky)"
+    endchoice
+
+    # Bo loc du lieu: gio chon RIENG cho tung tin hieu trong main.c
+    # (NODE_FILTER_TEMP/HUM/PRESS/LUX). Mac dinh: T/H=EMA, P=MovingAvg, L=Median.
+
+    config NODE_WDT_TIMEOUT_S
+        int "Watchdog timeout (seconds)"
+        range 3 60
+        default 10
+        help
+            Neu vong lap chinh treo qua thoi gian nay, chip se tu reset.
+
+    config LORA_FREQ_HZ
+        int "LoRa frequency (Hz)"
+        default 433000000
+        help
+            Ra-02 (SX1278) dung 433 MHz. Phai giong gateway.
+
+    config LORA_SF
+        int "LoRa spreading factor (7-12)"
+        range 7 12
+        default 9
+        help
+            SF cang lon bay cang xa nhung cang cham. Phai giong gateway.
+            Voi chu ky 3-4s nen dung SF7-9 de airtime du ngan.
+
+    config LORA_TX_POWER_DBM
+        int "LoRa TX power (dBm)"
+        range 2 20
+        default 17
+
+endmenu

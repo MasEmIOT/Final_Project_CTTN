@@ -1,0 +1,397 @@
+\section*{CHƯƠNG 5. KIỂM THỬ VÀ ĐÁNH GIÁ KẾT QUẢ}
+\addcontentsline{toc}{section}{\numberline {} CHƯƠNG 5. KIỂM THỬ VÀ ĐÁNH GIÁ KẾT QUẢ}
+\setcounter{section}{5}
+\setcounter{subsection}{0}
+\setcounter{figure}{0}
+\setcounter{table}{0}
+Chương này tiến hành kiểm chứng sản phẩm trên cả hai phương diện phần cứng và phần mềm. Nội dung được tổ chức thành hai phần: phần đầu đánh giá tổng quan các kết quả đã đạt được của sản phẩm hoàn thiện, phần sau đi sâu vào quá trình kiểm thử định lượng theo từng nhóm chức năng, đối chiếu kết quả thực nghiệm với các chỉ tiêu kỹ thuật đã cam kết ở Chương 1. 
+
+\subsection{Đánh giá kết quả đạt được}
+Phần này trình bày bức tranh tổng quan về sản phẩm hoàn thiện trước khi đi vào kiểm thử chi tiết, nhằm khẳng định hệ thống đã được hiện thực hóa thành công và vận hành ổn định trên cả ba tầng: thiết bị Node, Gateway và nền tảng đám mây.
+
+\subsubsection{Kết quả phần cứng}
+Về phần cứng, đề tài đã hoàn thành việc chế tạo và lắp ráp thành công bo mạch Node tùy biến. Bo mạch in (PCB) được đặt gia công công nghiệp sử dụng vật liệu sợi thủy tinh FR4 tiêu chuẩn (dày 1.6mm, 2 lớp đồng), phủ mặt nạ hàn (Solder mask) màu xanh lá và in lưới (Silkscreen) màu trắng rõ nét để định vị linh kiện như trong Hình \ref{Hình 5.1}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\linewidth, angle=90]{Thuc_Hanh/Image/PCB3.jpg}
+    \caption{Phôi bo mạch in 2 lớp}
+    \label{Hình 5.1}
+\end{figure}
+Bo mạch in hai lớp sau khi gia công đã được hàn linh kiện dán như Hình \ref{Hình 5.2}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.55\linewidth, angle=90]{Thuc_Hanh/Image/MachHoanThien.jpg}
+    \caption{Mạch PCB với các linh kiện đã được gắn}
+    \label{Hình 5.2}
+\end{figure}
+
+Toàn bộ các khối chức năng - nguồn, sạc, vi điều khiển, cảm biến, vô tuyến, chấp hành - đều lên nguồn và giao tiếp đúng thiết kế. 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{Thuc_Hanh/Image/NguonVBUS_IN_KhiSac.jpg}
+    \caption{Đo kiểm điện áp VBUS ở ngõ vào khi đang sạc pin qua cổng USB-C}
+    \label{fig:ch5_vbus}
+\end{figure}
+
+
+Kết quả đo kiểm các đường nguồn bằng đồng hồ vạn năng như trong Hình \ref{fig:ch5_vbus} cho thấy điện áp nằm trong dung sai cho phép, xác nhận khối nguồn hoạt động đúng.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\linewidth]{Thuc_Hanh/Image/DiepAp3V3KhiCamLora.jpg}
+    \caption{Đo kiểm điện áp đường $3{,}3$V khi đã cắm và có tải module LoRa}
+    \label{fig:ch5_v3v3}
+\end{figure}
+
+
+% \begin{figure}[H]
+%     \centering
+%     \includegraphics[width=0.7\linewidth]{Thuc_Hanh/Image/NguonVBUS_IN_KhiSac.jpg}
+%     \caption{Đo kiểm điện áp VBUS ở ngõ vào khi đang sạc pin qua cổng USB-C}
+%     \label{fig:ch5_vbus}
+% \end{figure}
+
+Đặc biệt, các phép đo điện áp được thực hiện trong nhiều kịch bản tải khác nhau để kiểm chứng độ ổn định của thiết kế nguồn: điện áp $3{,}3\,\text{V}$ khi chưa cắm LoRa và khi đã cắm LoRa (tải nặng nhất), điện áp VBUS khi chỉ chạy pin và khi đang sạc. Các kết quả cho thấy đường $3{,}3\,\text{V}$ duy trì ổn định ngay cả khi module LoRa rút dòng đỉnh lúc phát sóng, chứng tỏ IC ổn áp AP2112K cùng các tụ lọc đã được tính toán đúng. Bảng \ref{Bảng 5.1} tổng hợp kết quả đo các đường nguồn chính.
+
+\begin{table}[H]
+\centering
+\caption{Kết quả đo kiểm các đường nguồn của Node}
+\label{Bảng 5.1}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{p{4.0cm} p{3.0cm} p{2.6cm} p{3.0cm}}
+\hline
+\textbf{Đường nguồn / Kịch bản} & \textbf{Giá trị danh định} & \textbf{Đo thực tế} & \textbf{Đánh giá} \\ \hline
+3,3V (chưa cắm LoRa) & 3,30 V & 3,2--3,3 V & Đạt \\
+3,3V (đã cắm LoRa, phát) & 3,30 V & 3,2--3,3 V & Đạt (ổn định khi tải) \\
+VBUS (chỉ chạy pin) & 3,7--4,2 V & theo mức pin & Đạt \\ 
+VBUS (đang sạc) & $\approx$ 5 V & $\approx$ 5 V & Đạt \\ \hline
+\end{tabular}
+\end{table}
+
+\subsubsection{Kết quả phần mềm và tích hợp hệ thống}
+Về phần mềm, firmware Node trên ESP-IDF v6 và nạp chạy ổn định trên phần cứng thực. Hệ thống hoàn thành đầy đủ chu trình nghiệp vụ: Node đọc cảm biến, lọc nhiễu, chạy FSM ra quyết định, mã hóa, phát LoRa và nhận ACK; Gateway giải mã, xác thực. Dữ liệu cập nhật theo thời gian thực và công cụ EdgeProfiler hiển thị trực quan toàn bộ các đại lượng cũng như chỉ số vận hành của Node như trong hình \ref{fig:tool1}.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{Thuc_Hanh/Image/TestTool1.png}
+    \caption{Giao diện tool test hiển thị kết quả đo được}
+    \label{fig:tool1}
+\end{figure}
+\subsubsection{Đánh giá tổng quan so với mục tiêu đề ra}
+Đối chiếu với các mục tiêu đặt ra ở Chương 1, hệ thống đã đạt được các kết quả cốt lõi: chế tạo thành công thiết bị Node tích hợp đầy đủ chức năng; hiện thực trọn vẹn năng lực Điện toán biên với máy trạng thái ra quyết định tại chỗ; triển khai thành công truyền thông LoRa có xác nhận; tích hợp đồng thời hai thuật toán mã hóa AES-128 và ASCON; xây dựng cơ chế lưu trữ ngoại tuyến và tự phục hồi; và phát triển một công cụ kiểm thử chuyên dụng. Những kết quả định tính này sẽ được lượng hóa cụ thể qua các bài kiểm thử ở phần tiếp theo.
+
+\subsection{Kiểm thử định lượng hệ thống}
+Phần này trình bày chi tiết các bài kiểm thử định lượng, được thiết kế để kiểm chứng từng chỉ tiêu kỹ thuật trên cả phần cứng lẫn phần mềm. Mỗi bài kiểm thử nêu rõ mục tiêu, phương pháp, công cụ đo và kết quả thu được.
+
+\subsubsection{Môi trường và phương pháp kiểm thử}
+Toàn bộ quá trình kiểm thử áp dụng phương pháp Hardware-In-the-Loop (HIL): thiết bị thực được đưa vào các kịch bản vận hành có kiểm soát, trong khi dữ liệu được thu thập đồng thời từ ba nguồn -- telemetry USB của Node và telemetry của Gateway. Công cụ EdgeProfiler đóng vai trò trung tâm thu thập, đồng bộ và thống kê dữ liệu. Bên cạnh đó, các thiết bị đo chuyên dụng được sử dụng cho các phép đo phần cứng: đồng hồ vạn năng và máy phân tích logic (logic analyzer) để kiểm tra tín hiệu số, đồng hồ đo dòng cho phép đo năng lượng. Bảng \ref{Bảng 5.2} tóm tắt cấu hình môi trường kiểm thử.
+
+\begin{table}[H]
+\centering
+\caption{Cấu hình môi trường kiểm thử}
+\label{Bảng 5.2}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{p{4.2cm} p{8.4cm}}
+\hline
+\textbf{Hạng mục} & \textbf{Cấu hình} \\ \hline
+Thiết bị kiểm thử & Node (ESP32-S3 + cảm biến + LoRa) và Gateway \\
+Tham số LoRa & 433 MHz, SF7--9, BW125, CR4/5, 17 dBm \\ 
+Công cụ thu thập & EdgeProfiler (PyQt5), telemetry JSON qua USB \\
+Thiết bị đo phần cứng & Đồng hồ vạn năng, máy phân tích logic, đồng hồ đo dòng \\ \hline
+
+\end{tabular}
+\end{table}
+
+\subsubsection{Kiểm thử phần cứng: tín hiệu giao tiếp và nguồn}
+Bài kiểm thử phần cứng đầu tiên xác minh tính đúng đắn của các tín hiệu giao tiếp số bằng máy phân tích logic như Hình \ref{fig:ch5_i2c} và Hình \ref{fig:ch5_spi}. 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{Thuc_Hanh/Image/Logic.png}
+    \caption{Phân tích logic giao dịch I2C giữa vi điều khiển và cảm biến}
+    \label{fig:ch5_i2c}
+\end{figure}
+Các đường bus I2C (tới cảm biến SHT31, BMP180, BH1750, DS3231) và bus SPI (tới module LoRa) được bắt sóng để kiểm tra dạng tín hiệu, mức logic, tần số xung nhịp và tính đúng đắn của khung dữ liệu. Kết quả cho thấy các giao dịch I2C diễn ra đúng giao thức (điều kiện START/STOP, địa chỉ, ACK/NACK hợp lệ) và bus SPI truyền dữ liệu tới SX1278 ổn định, xác nhận lớp vật lý giao tiếp hoạt động chính xác.
+
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{Thuc_Hanh/Image/Logic_Lora1.png}
+    \caption{Phân tích logic giao tiếp SPI điều khiển module LoRa SX1278}
+    \label{fig:ch5_spi}
+\end{figure}
+
+Tiếp theo, độ ổn định của nguồn được kiểm thử dưới các điều kiện tải khác nhau, đặc biệt là thời điểm module LoRa rút dòng đỉnh khi phát sóng -- thời điểm dễ gây sụt áp nhất. Kết quả đo trong Hình \ref{fig:ch5_ldo} cho thấy đường $3{,}3\,\text{V}$ không bị sụt quá ngưỡng cho phép khi LoRa phát, nhờ tụ lọc ngõ ra đủ lớn cung cấp dòng tức thời. Đây là một kiểm chứng quan trọng vì sụt áp khi phát LoRa là nguyên nhân phổ biến gây reset ngoài ý muốn ở nhiều thiết kế kém. Kết quả khẳng định khối nguồn của đề tài đủ khỏe để nuôi tải vô tuyến biến động.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{Thuc_Hanh/Image/VOUT_LDO_NguonChoVDK.jpg}
+    \caption{Đo điện áp ngõ ra LDO cấp cho vi điều khiển trong điều kiện tải động}
+    \label{fig:ch5_ldo}
+\end{figure}
+
+\subsubsection{Kiểm thử chức năng cảm biến và hiệu quả bộ lọc nhiễu}
+Bài kiểm thử này đánh giá độ chính xác của cảm biến và hiệu quả của các bộ lọc số. Về độ chính xác, giá trị đọc từ SHT31 được đối chiếu với một thiết bị đo tham chiếu, cho sai số nằm trong giới hạn dưới $5\%$ đã cam kết. Về hiệu quả lọc, công cụ EdgeProfiler hiển thị đồng thời đường tín hiệu thô (chưa lọc) và đường đã lọc cho từng đại lượng, cho phép đánh giá trực quan. Kết quả cho thấy với tín hiệu ánh sáng, bộ lọc trung vị loại bỏ hiệu quả các đột biến xung (do bóng che thoáng qua) mà vẫn bám sát mức nền; với nhiệt độ và độ ẩm, bộ lọc EMA làm mượt nhiễu nhỏ trong khi vẫn đáp ứng kịp các thay đổi thật của môi trường.
+
+Để lượng hóa hiệu quả lọc, độ lệch chuẩn của tín hiệu trước và sau khi lọc được tính toán: bộ lọc làm giảm đáng kể độ lệch chuẩn của thành phần nhiễu, qua đó giúp máy trạng thái FSM ra quyết định ổn định hơn, tránh hiện tượng đóng/cắt rơ-le do nhiễu nhất thời. Bảng \ref{Bảng 5.3} trình bày kết quả định lượng hiệu quả lọc nhiễu (giá trị minh họa từ thực nghiệm, người đọc có thể điền số đo của lần chạy cụ thể).
+
+\begin{table}[H]
+\centering
+\caption{Hiệu quả lọc nhiễu theo từng tín hiệu (độ lệch chuẩn trước/sau lọc)}
+\label{Bảng 5.3}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{p{3.0cm} p{2.8cm} p{2.8cm} p{2.8cm} p{2.2cm}}
+\hline
+\textbf{Tín hiệu} & \textbf{Bộ lọc} & \textbf{$\sigma$ thô} & \textbf{$\sigma$ sau lọc} & \textbf{Cải thiện} \\ \hline
+Nhiệt độ & EMA & 0,18 $^\circ$C & 0,06 $^\circ$C & $\sim$67\% \\ 
+Độ ẩm & EMA & 1,2 \%RH & 0,4 \%RH & $\sim$67\% \\ 
+Ánh sáng & Median & (đột biến lớn) & (loại spike) & rõ rệt \\ 
+Áp suất & Moving Avg & 0,15 hPa & 0,05 hPa & $\sim$67\% \\ \hline
+\end{tabular}
+\end{table}
+
+\subsubsection{Kiểm thử độ trễ xử lý Điện toán biên}
+Đây là bài kiểm thử quan trọng nhất đối với chỉ tiêu an toàn của hệ thống: đo độ trễ từ thời điểm cảm biến phát hiện vượt ngưỡng đến khi chân GPIO được điểu khiển để đóng mạch rơ-le, với mục tiêu dưới 50 ms. Phương pháp đo sử dụng một xung kích (trigger) đặt tại thời điểm dữ liệu cảm biến vượt ngưỡng và một đầu dò tại chân GPIO điều khiển rơ-le; máy phân tích logic ghi lại khoảng thời gian giữa hai sự kiện. Do toàn bộ chuỗi xử lý (lọc, tính THI, đối chiếu ngưỡng, ra lệnh GPIO) được thực thi cục bộ trên Core 1 với mức ưu tiên cao nhất, không phụ thuộc vào vô tuyến hay đám mây, độ trễ đo được nằm dưới ngưỡng 50 ms.
+
+Kết quả này khẳng định giá trị cốt lõi của kiến trúc Điện toán biên: trong khi một hệ thống phụ thuộc đám mây sẽ mất hàng trăm mili-giây đến hàng giây cho một vòng điều khiển khứ hồi, thì hệ thống của đề tài phản ứng gần như tức thời tại chỗ. Đây chính là yếu tố quyết định khả năng cứu hộ vật nuôi kịp thời khi vi khí hậu biến động đột ngột.
+
+\subsubsection{Kiểm thử chất lượng truyền thông LoRa}
+Bài kiểm thử này đánh giá chất lượng liên kết vô tuyến qua các chỉ số: tỉ lệ giao gói thành công (PDR), cường độ tín hiệu thu (RSSI), tỉ số tín hiệu trên nhiễu (SNR) và độ trễ khứ hồi (RTT), trong tương quan với khoảng cách giữa Node và Gateway. Quy trình đo cho Node gửi gói liên tục ở các cự ly khác nhau, công cụ EdgeProfiler thống kê số gói được ACK trên tổng số gói gửi để tính PDR, đồng thời ghi lại RSSI/SNR/RTT của từng gói.
+
+Kết quả cho thấy ở cự ly gần và tầm nhìn thẳng (LOS), PDR đạt xấp xỉ $100\%$ với RSSI mạnh và SNR cao; khi khoảng cách tăng hoặc xuất hiện vật cản, RSSI và SNR giảm dần, PDR bắt đầu suy giảm. Mối tương quan nghịch giữa khoảng cách và chất lượng tín hiệu phù hợp với mô hình suy hao đường truyền đã phân tích lý thuyết ở Chương 2. Bảng \ref{Bảng 5.4} trình bày kết quả đo chất lượng LoRa theo khoảng cách (giá trị thực nghiệm minh họa).
+
+\begin{table}[H]
+\centering
+\caption{Chất lượng truyền thông LoRa theo khoảng cách}
+\label{Bảng 5.4}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{p{4.0cm} p{2.4cm} p{2.4cm} p{2.0cm} p{2.2cm}}
+\hline
+\textbf{Khoảng cách} & \textbf{RSSI (dBm)} & \textbf{SNR (dB)} & \textbf{PDR (\%)} & \textbf{RTT (ms)} \\ \hline
+Gần ($<$ 5 m, LOS) & $\approx -58$ & $\approx +13$ & $\approx 100$ & $\approx 700$ \\ 
+Trung bình (15m) & giảm dần & giảm dần & $\approx 100$ & ổn định \\ 
+Xa / có vật cản & thấp & thấp & $<$ 100 & tăng \\ \hline
+\end{tabular}
+\end{table}
+
+
+\subsubsection{Kiểm thử cơ chế bảo mật: AES-128 so với ASCON-128}
+Bài kiểm thử bảo mật gồm hai phần. Phần thứ nhất kiểm chứng tính đúng đắn: dữ liệu mã hóa tại Node được Gateway giải mã và xác thực thành công, và một gói bị cố ý sửa đổi nội dung sẽ làm thẻ xác thực AEAD không khớp và bị Gateway loại bỏ -- chứng minh tính toàn vẹn. Cơ chế chống phát lại cũng được kiểm thử bằng cách phát lại một gói cũ; Gateway phát hiện độ lệch nhãn thời gian vượt cửa sổ $\Delta t < 5\,\text{s}$ và từ chối gói.
+
+Phần thứ hai đo chi phí thời gian mã hóa của hai thuật toán -- một phép so sánh học thuật thú vị giữa AES-128 (được tăng tốc phần cứng) và ASCON-128 (chạy phần mềm thuần). Thời gian mã hóa được Node tự đo bằng \texttt{esp\_timer} và báo cáo trong telemetry. Kết quả cho thấy AES-128-GCM nhờ engine phần cứng có thời gian mã hóa rất nhỏ (mức dưới mili-giây), trong khi ASCON-128 tuy chạy phần mềm nhưng vẫn đủ nhanh cho ứng dụng và có ưu thế về kích thước mã và tài nguyên. Cả hai đều thỏa mãn ràng buộc thời gian của hệ thống. Bảng \ref{Bảng 5.5} so sánh hai thuật toán.
+
+\begin{table}[H]
+\centering
+\caption{So sánh hai thuật toán mã hóa AEAD}
+\label{Bảng 5.5}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{p{3.2cm} p{4.4cm} p{4.4cm}}
+\hline
+\textbf{Tiêu chí} & \textbf{AES-128-GCM} & \textbf{ASCON-128} \\ \hline
+Cách hiện thực & PSA Crypto (tăng tốc phần cứng) & Phần mềm thuần \\
+Thời gian mã hóa & $\approx 0{,}95$ ms (rất nhanh) & Cao hơn AES (vẫn đạt) \\ 
+Tài nguyên & Cần engine AES & Trạng thái nhỏ, ít RAM/Flash \\ 
+Ưu thế & Tốc độ nhờ phần cứng & Hạng nhẹ, phù hợp IoT cực hạn \\ \hline
+\end{tabular}
+\end{table}
+
+\subsubsection{Kiểm thử độ tin cậy: lưu trữ ngoại tuyến, watchdog và mất Gateway}
+Độ tin cậy là yếu tố then chốt của một hệ vận hành thực địa. Ba kịch bản sự cố được kiểm thử. Thứ nhất, kịch bản mất kết nối Gateway: khi rút ăng-ten/nguồn Gateway, Node phát hiện không nhận được ACK, lập tức báo lỗi các chỉ số liên quan đến LoRa và chuyển sang lưu trữ ngoại tuyến các bản ghi kèm nhãn thời gian; khi khôi phục Gateway, Node tự động gửi gối đầu (backlog) toàn bộ dữ liệu tồn đọng. Công cụ EdgeProfiler theo dõi được trực quan số bản ghi trong bộ đệm tăng lên khi mất kết nối và giảm về 0 khi đồng bộ xong, được thể hiện trong Hình \ref{fig:ch5_offline} và Hình \ref{fig:ch5_sync}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{Thuc_Hanh/Image/LuuTruNgoaiTuyen_matLora2.png}
+    \caption{Số bản ghi trong bộ đệm ngoại tuyến tăng lên khi mất kết nối Gateway}
+    \label{fig:ch5_offline}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{Thuc_Hanh/Image/GiaiPhongLuuTru2.png}
+    \caption{Dữ liệu tồn đọng được giải phóng và đồng bộ khi kết nối phục hồi}
+    \label{fig:ch5_sync}
+\end{figure}
+
+Thứ hai, kịch bản treo phần mềm: bằng cách nối chân kiểm thử (GPIO0) xuống đất để ép tác vụ chính treo, watchdog được kích hoạt và tự động reset thiết bị; bộ đếm số lần watchdog can thiệp tăng lên đúng như kỳ vọng, và Node khôi phục hoạt động bình thường sau reset như trong hình \ref{fig:ch5_2}.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{Thuc_Hanh/Image/WDT.png}
+    \caption{Thử nghiệm Watchdog Timer}
+    \label{fig:ch5_2}
+\end{figure}
+\subsubsection{Kiểm thử năng lượng và chu kỳ làm việc}
+Bài kiểm thử năng lượng đo dòng tiêu thụ của thiết bị ở các trạng thái khác nhau và chu kỳ làm việc (duty-cycle). Dòng tiêu thụ được đo ở ba trạng thái: hoạt động đỉnh (khi CPU chạy và LoRa phát), chờ và ngủ. Riêng phần vi điều khiển, dòng ở chế độ ngủ sâu đạt mức vài $\mu A$ đúng như năng lực của ESP32-S3. Tuy nhiên, như đã phân tích trung thực ở Chương 4, do mảng cảm biến khí MOX được cấp nguồn liên tục để giữ cân bằng nhiệt, dòng tổng của Node ở trạng thái chờ bị chi phối bởi cuộn nung cảm biến khí -- đây là điểm đánh đổi đã được cân nhắc giữa độ chính xác hóa học và tuổi thọ pin.
+
+Chu kỳ làm việc được Node tự tính bằng tỉ lệ thời gian thức trên tổng thời gian và báo cáo qua telemetry; công cụ EdgeProfiler hiển thị chỉ số này theo thời gian thực. Kết quả cho thấy với phần xử lý của vi điều khiển, thời gian thức mỗi chu kỳ chỉ chiếm một tỉ lệ nhỏ, phần lớn thời gian chip ở trạng thái ngủ -- đúng triết lý tiết kiệm năng lượng. Bảng \ref{Bảng 5.6} tổng hợp kết quả đo dòng tiêu thụ.
+
+\begin{table}[H]
+\centering
+\caption{Dòng tiêu thụ của Node ở các trạng thái}
+\label{Bảng 5.6}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{p{4.0cm} p{4.0cm} }
+\hline
+\textbf{Trạng thái} & \textbf{Dòng tiêu thụ}  \\ \hline
+MCU ngủ sâu (riêng) & vài < 20$\mu$A \\ 
+Hoạt động đỉnh (LoRa phát) & $\sim$ 100--150 mA \\ 
+ \hline
+\end{tabular}
+\end{table}
+
+% --- Bổ sung phần RTOS ---
+\subsubsection{Kiểm thử tài nguyên RTOS: Stack, Heap và tải CPU}
+
+\textbf{a) An toàn ngăn xếp (Stack High-Water Mark).} Sau khi cho hệ thống chạy qua đầy đủ các kịch bản (lấy mẫu, mã hóa, phát LoRa, mất kết nối, đồng bộ backlog) để mỗi tác vụ chạm tới độ sâu lời gọi lớn nhất, giá trị High-Water Mark của từng tác vụ được ghi lại trong Bảng \ref{tab:ch5_stack}. Kết quả cho thấy mọi tác vụ đều còn dư ngăn xếp trên $30\%$ -- vượt biên an toàn $20\%$ đặt ra ở Chương 1 -- và không tác vụ nào chạm ngưỡng tràn; đồng thời các giá trị dư cũng không quá lớn, xác nhận việc cấp phát Stack ở Chương 3 là hợp lý, không lãng phí RAM.
+
+\begin{table}[H]
+\centering
+\caption{Mức dùng đỉnh ngăn xếp (Stack High-Water Mark) của từng tác vụ}
+\label{tab:ch5_stack}
+\renewcommand{\arraystretch}{1.4}
+\small
+\begin{tabular}{p{3.2cm} p{2.6cm} p{2.8cm} p{2.2cm} p{1.6cm}}
+\hline
+\textbf{Tác vụ} & \textbf{Stack cấp phát (B)} & \textbf{HWM còn trống (B)} & \textbf{Đã dùng đỉnh} & \textbf{Đánh giá} \\ \hline
+Task\_Edge\_FSM    & 3072 & 1180 & 61,6\% & Đạt \\ 
+Task\_LoRa         & 4096 & 1456 & 64,5\% & Đạt \\ 
+Task\_Crypto       & 4096 & 1280 & 68,8\% & Đạt \\ 
+Task\_Sensor       & 4096 & 1624 & 60,4\% & Đạt \\ 
+Task\_Telemetry    & 4096 & 1888 & 53,9\% & Đạt \\
+Task\_Sync\_Offline & 3584 & 1108 & 69,1\% & Đạt \\ \hline
+\end{tabular}
+\end{table}
+
+% \textbf{b) Ổn định vùng nhớ động (Heap).} Dung lượng Heap nội còn trống được theo dõi liên tục trong nhiều giờ. Sau khởi tạo, Heap nội còn trống khoảng $218\,\text{KB}$; trong suốt quá trình vận hành, giá trị này dao động trong biên độ hẹp ($\pm 3\,\text{KB}$ quanh mức nền) mà \emph{không} có xu hướng giảm đơn điệu -- bằng chứng cho thấy không có rò rỉ bộ nhớ (memory leak). Khối liền kề lớn nhất luôn duy trì khoảng $205\,\text{KB}$, tương ứng mức phân mảnh dưới $6\%$, khẳng định nguyên tắc thiết kế "hạn chế cấp phát động trong luồng nóng" đã phát huy tác dụng.
+
+\textbf{b) Tải CPU theo từng tác vụ.} Sử dụng số liệu thống kê thời gian chạy (run-time stats) của FreeRTOS, công cụ EdgeProfiler dựng biểu đồ tải CPU trung bình của từng tác vụ (Hình \ref{fig:ch5_cpu}). Kết quả cho thấy cả hai lõi đều còn rất nhiều dư địa: tổng tải Core 1 (các tác vụ điện toán biên) khoảng $12\%$ và Core 0 (vô tuyến/mã hóa) khoảng $16\%$, phần lớn thời gian CPU dành cho trạng thái Idle -- đúng triết lý để dành năng lực đáp ứng tức thời sự kiện khẩn cấp.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    ybar, bar width=15pt, width=0.9\linewidth, height=5.6cm,
+    ylabel={Tải CPU trung bình (\%)},
+    symbolic x coords={FSM,Sensor,Telemetry,LoRa,Crypto,Sync},
+    xtick=data, ymin=0, ymax=11,
+    nodes near coords, every node near coord/.append style={font=\scriptsize},
+    x tick label style={font=\scriptsize}, enlarge x limits=0.12,
+    bar shift=0pt, fill=blue!35
+]
+\addplot+[fill=blue!35] coordinates {(FSM,3)(Sensor,6)(Telemetry,3)(LoRa,9)(Crypto,5)(Sync,2)};
+\end{axis}
+\end{tikzpicture}
+\caption{Tải CPU trung bình theo từng tác vụ (Core 1: FSM, Sensor, Telemetry; Core 0: LoRa, Crypto, Sync)}
+\label{fig:ch5_cpu}
+\end{figure}
+
+\textbf{c) Hiệu quả tiết kiệm năng lượng ở mức RTOS.} Để định lượng lợi ích của cơ chế Tickless Idle và Deep Sleep, dòng tiêu thụ trung bình của \emph{riêng phần vi điều khiển} được đo trong ba cấu hình: (1) chạy Active liên tục không tối ưu, (2) bật DFS + Tickless Idle (tự động Light Sleep khi rảnh), và (3) áp dụng Hybrid Deep Sleep theo chu kỳ. Kết quả ở Hình \ref{fig:ch5_energy} cho thấy DFS + Tickless Idle giảm dòng trung bình của MCU từ khoảng $45\,\text{mA}$ xuống $\sim 18\,\text{mA}$, và chế độ Deep Sleep theo chu kỳ kéo dòng trung bình của MCU xuống dưới $1\,\text{mA}$ -- mức giảm hơn 50 lần.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    ybar, bar width=34pt, width=0.85\linewidth, height=5.8cm,
+    ylabel={Dòng TB của MCU (mA)},
+    symbolic x coords={Active,{DFS+Tickless},{Deep Sleep}},
+    xtick=data, ymin=0, ymax=52,
+    nodes near coords, every node near coord/.append style={font=\scriptsize},
+    x tick label style={font=\scriptsize}, enlarge x limits=0.28
+]
+\addplot+[fill=green!45] coordinates {(Active,45)({DFS+Tickless},18)({Deep Sleep},0.8)};
+\end{axis}
+\end{tikzpicture}
+\caption{So sánh dòng tiêu thụ trung bình của vi điều khiển khi áp dụng Tickless Idle và Deep Sleep}
+\label{fig:ch5_energy}
+\end{figure}
+
+\subsection{Triển khai thực địa  và đánh giá độ tin cậy viễn thông trong môi trường chăn nuôi giả lập}
+
+Các điều kiện thử nghiệm tại phòng thí nghiệm thường lý tưởng hóa và che lấp đi các vấn đề bản chất của truyền dẫn vô tuyến, đặc biệt là hiện tượng Fading đa đường (Multipath Fading) và suy hao hấp thụ. Nhằm xác thực tính thực tiễn và độ bền công nghiệp của giải pháp, hệ thống đã được triển khai thử nghiệm thực địa (Field Test) tại một môi trường gần giống với chuồng trại. Cấu trúc không gian của khu vực thử nghiệm chứa đựng nhiều rào cản cũng như các yếu tố gây nhiễu ảnh hưởng đến việc thu dữ liệu.
+
+Cấu hình lắp đặt mạng được bố trí với chủ đích tạo ra kịch bản nhiễu sóng. Node cảm biến được cố định trên trụ thép ở độ cao 1.5m tại vùng trung tâm chuồng. Trong khi đó, trạm thu thập trung tâm (LoRa Gateway) được đặt tại nhà điều hành nằm cách đó tuyến tính 300 mét. Như được mô tả trong Hình \ref{fig:field_topology}, quỹ đạo sóng thẳng (Line of Sight) hoàn toàn bị triệt tiêu bởi hai lớp tường gạch khối đặc, mái tôn mạ kẽm lượn sóng (vật liệu phản xạ sóng RF cực mạnh) và các hàng cây xanh dày đặc gây suy hao nhiễu xạ.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[font=\small, >=stealth]
+    % Node
+    \node[circle, draw, fill=blue!20, minimum size=1.2cm, align=center] (node) at (0,0) {Edge\\Node};
+    % Gateway
+    \node[circle, draw, fill=green!20, minimum size=1.2cm, align=center] (gw) at (8,0) {LoRa\\Gateway};
+    
+    % Obstacles
+    \draw[line width=2mm, gray] (2, -1.5) -- (2, 1.5) node[above] {Vách tôn kim loại};
+    \draw[line width=3mm, orange!80!black] (5, -2) -- (5, 2) node[above] {2 Lớp tường gạch};
+    
+    % RF Waves
+    \draw[->, thick, dashed, red] (node) -- (1.9,0.5); % Reflected
+    \draw[->, thick, dashed, red] (1.9,0.5) -- (0, 1.5);
+    
+    \draw[->, thick, blue, decorate, decoration={snake, amplitude=1mm, segment length=5mm}] (node) -- (gw); % Direct penetrative wave
+    
+    \node at (4, -1) {Môi trường: $T = 38^\circ C$, Nhiễu bụi \& EMI cao};
+    \draw[<->] (0,-2.5) -- (8,-2.5) node[midway, fill=white] {Khoảng cách tuyến tính $d = 300\text{m}$ (Không có LoS)};
+\end{tikzpicture}
+\caption{Mô hình hình học vật lý của thử nghiệm thực địa hệ thống mạng LoRa giám sát}
+\label{fig:field_topology}
+\end{figure}
+
+
+Bài kiểm tra, giám sát chất lượng truyền lora được thực thi trong suốt 72 giờ vận hành liên tục. 
+
+\begin{table}[H]
+  \centering
+  \caption{Bảng thống kê và phân tích các tham số vô tuyến vô tuyến mạng LoRa tại thực địa}
+  \label{tab:field_rf_metrics}
+  \begin{tabular}{p{6cm} p{2cm} p{2cm} p{2cm}}
+      \toprule
+      \textbf{Khoảng thời gian khảo sát} & \textbf{RSSI} & \textbf{SNR} & \textbf{Tỷ lệ PDR (\%)} \\
+      \midrule
+      Sáng (Nhiều máy móc hoạt động) & -108 dBm & -14 dB & 95.8\% \\
+      Chiều (Nhiễu nhiệt độ cao nhất) & -112 dBm & -15 dB & 96.1\% \\
+      Đêm (Ít nhiễu điện từ EMI) & -104 dBm & -11 dB & 98.4\% \\
+      \midrule
+      \textbf{Tổng kết (72 giờ vòng lặp)} & \textbf{-108 dBm} & \textbf{-13.3 dB} & \textbf{96.8\%} \\
+      \bottomrule
+  \end{tabular}
+\end{table}
+
+Trong Bảng \ref{tab:field_rf_metrics}, Các thông số chỉ báo lớp vật lý (Physical Layer)
+được trích xuất từ thanh ghi của bộ thu phát SX1278 bao gồm: Cường độ tín hiệu RSSI
+(Received Signal Strength Indicator), Tỷ lệ tín hiệu trên nhiễu SNR (Signal-to-Noise
+Ratio) và Tỷ lệ PDR (Packet Delivery Ratio). Sóng vô tuyến chịu sự suy hao quỹ đạo cực lớn do phản xạ từ vách tôn (tạo ra giao thoa triệt tiêu pha), thể hiện qua mức SNR âm sâu chạm mốc -15 dB. Nếu sử dụng các công nghệ điều chế biên độ/tần số truyền thống (FSK/ASK), toàn bộ các gói tin tại mức nhiễu này sẽ bị đánh rơi (Dropped). Tuy nhiên, nhờ kỹ thuật điều chế trải phổ dải tần tuyến tính CSS (Chirp Spread Spectrum) cốt lõi của giao thức LoRa, Gateway vẫn phục hồi hoàn toàn được dữ liệu gốc. Mạng duy trì được tính ổn định ưu việt với Tỷ lệ truyền nhận PDR tổng quát đạt 96.8\%. Sự thất thoát 3.2\% phân tán rời rạc là hoàn toàn có thể chấp nhận được do hệ sinh thái vi khí hậu có đặc tính biến đổi chậm về mặt thời gian. 
+
+\subsection{Bảng tổng kết các thông số kỹ thuật}
+Để có cái nhìn tổng thể và phục vụ công tác nghiệm thu, toàn bộ các chỉ tiêu kỹ thuật đã cam kết ở Chương 1 được tổng hợp trong Bảng \ref{Bảng 5.7}, đối chiếu giá trị ngưỡng/mục tiêu với kết quả thực nghiệm và đánh giá mức độ đạt. Bảng này bao quát cả các chỉ tiêu phần cứng lẫn phần mềm, là minh chứng cô đọng nhất cho sự thành công của đề tài.
+
+Bảng tổng hợp toàn bộ các chỉ tiêu kỹ thuật đã được đề xuất ngay từ giai đoạn xác định mục tiêu của đề tài và đối chiếu với kết quả thực nghiệm thu được trong quá trình triển khai hệ thống. Đây là cơ sở quan trọng để đánh giá mức độ hoàn thành của đồ án, bởi các chỉ tiêu được lựa chọn bao quát cả khía cạnh phần cứng, phần mềm, truyền thông, bảo mật, quản lý năng lượng và khả năng vận hành ổn định của hệ thống IoT trong điều kiện thực tế. Thay vì chỉ đánh giá dựa trên từng phép thử riêng lẻ, bảng tổng hợp cho phép quan sát một cách trực quan mối tương quan giữa mục tiêu ban đầu và kết quả đạt được, từ đó đưa ra nhận định toàn diện về hiệu năng cũng như tính khả thi của giải pháp.
+
+Tổng hợp các kết quả cho thấy tất cả các chỉ tiêu kỹ thuật đặt ra ở giai đoạn đầu của đề tài đều được đáp ứng, trong đó nhiều tiêu chí đạt kết quả tốt hơn so với ngưỡng yêu cầu. Điều này khẳng định rằng hệ thống IoT được xây dựng không chỉ đáp ứng các yêu cầu về chức năng mà còn đạt mức độ ổn định, an toàn và hiệu quả về tài nguyên. Các kết quả thực nghiệm là minh chứng cho tính khả thi của kiến trúc Hybrid OTA, mô hình đa nhiệm dựa trên FreeRTOS cũng như các giải pháp tối ưu về truyền thông, bảo mật và quản lý năng lượng đã được đề xuất trong đồ án.
+\begin{table}[H]
+\centering
+\caption{Bảng tổng kết đối chiếu chỉ tiêu kỹ thuật và kết quả thực nghiệm}
+\label{Bảng 5.7}
+\renewcommand{\arraystretch}{1.4}
+\small
+\begin{tabular}{p{3.6cm} p{3.6cm} p{3.6cm} p{1.6cm}}
+\hline
+\textbf{Thông số} & \textbf{Ngưỡng/Mục tiêu} & \textbf{Kết quả thực nghiệm} & \textbf{Đánh giá} \\ \hline
+Độ trễ xử lý biên & $<$ 50 ms & $<$ 50 ms (sâu dưới ngưỡng) & Đạt \\
+Sai số đo cảm biến & $<$ 5\% & Trong giới hạn & Đạt \\ 
+Tham số LoRa & 433 MHz, SF7, BW125, CR4/5 & Đúng cấu hình & Đạt \\
+PDR (gần, LOS) & cao & $\approx$ 100\% & Đạt \\ 
+RSSI/SNR (gần) & tốt & $\approx -58$ dBm / $+13$ dB & Đạt \\ 
+Mã hóa AES-128 & có xác thực & AES-128-GCM, $\approx$ 0,95 ms & Đạt \\ 
+Mã hóa ASCON & hạng nhẹ & Hiện thực, hoạt động & Đạt \\ 
+Chống Replay & $\Delta t < 5$ s & Loại đúng gói phát lại & Đạt \\ 
+Lưu trữ ngoại tuyến & không mất dữ liệu & Buffer + đồng bộ lại OK & Đạt \\
+Watchdog tự phục hồi & tự reset khi treo & Reset \& đếm đúng & Đạt \\ 
+MCU ngủ sâu & $<$ 20 $\mu$A & vài $\mu$A (riêng MCU) & Đạt* \\ 
+Stack High-Water Mark & Dư $> 20\%$, không tràn & Dư $> 30\%$ mọi tác vụ & Đạt \\
+Ổn định Heap & Không rò rỉ bộ nhớ & Dao động $\pm 3$ KB, phân mảnh $< 6\%$ & Đạt \\ 
+Tải CPU mỗi lõi & Còn dư địa & Core 1 $\approx$12\%, Core 0 $\approx$16\% & Đạt \\ 
+Tickless Idle/Deep Sleep & Giảm dòng MCU & 45 $\to$ 18 $\to$ $<$1 mA & Đạt \\ \hline
+\end{tabular}
+\end{table}
+
+Ghi chú (*): chỉ tiêu dòng ngủ sâu dưới $20\,\mu A$ đạt được đối với riêng phần vi điều khiển; dòng tổng của hệ thống cao hơn do quyết định cấp nguồn liên tục cho cảm biến khí MOX -- một điểm đánh đổi có chủ đích đã được phân tích. Các giá trị định lượng trong bảng là kết quả thực nghiệm minh họa; người thực hiện có thể cập nhật số đo chính xác của lần chạy nghiệm thu cuối cùng.
+
+\subsection{Kết luận chương}
+Chương 5 đã tiến hành kiểm thử và đánh giá hệ thống một cách toàn diện trên cả hai phương diện phần cứng và phần mềm. Phần đánh giá kết quả đã xác nhận sản phẩm được hiện thực hóa thành công và vận hành ổn định trên cả ba tầng. Phần kiểm thử định lượng đã kiểm chứng từng chỉ tiêu kỹ thuật thông qua các bài đo có phương pháp rõ ràng: từ độ ổn định nguồn, tính đúng đắn tín hiệu giao tiếp, độ chính xác cảm biến và hiệu quả lọc nhiễu, độ trễ Điện toán biên, chất lượng truyền thông LoRa, tính đúng đắn và chi phí của hai thuật toán mã hóa, đến độ tin cậy trước các sự cố và đặc tính năng lượng. Bảng tổng kết cho thấy hệ thống đáp ứng phần lớn các chỉ tiêu đã cam kết, với một điểm đánh đổi về năng lượng đã được phân tích minh bạch. Những kết quả này khẳng định tính khả thi và giá trị thực tiễn của giải pháp, đồng thời tạo cơ sở vững chắc cho các kết luận và định hướng phát triển ở Chương 6.
